@@ -245,11 +245,12 @@ async function init(){
   try{const r=await window.storage.get('employees');if(r&&r.value)employees=JSON.parse(r.value);}catch(e){}
   if(!employees.length){
     employees=[
-      {id:1,name:"Arjun Mehta",role:"Sales",pin:"1234",isAdmin:false,colorIdx:0},
-      {id:2,name:"Priya Sharma",role:"Support",pin:"2222",isAdmin:false,colorIdx:1},
-      {id:3,name:"Rahul Nair",role:"Operations",pin:"3333",isAdmin:false,colorIdx:2},
-      {id:4,name:"Divya Iyer",role:"Finance",pin:"4444",isAdmin:false,colorIdx:3},
-      {id:5,name:"Kiran Reddy",role:"Admin",pin:"5555",isAdmin:true,colorIdx:4},
+      {id:1,name:"SURYA",role:"Service Engineer",pin:"1111",isAdmin:false,colorIdx:0},
+      {id:2,name:"SALMAN",role:"Sales Manager",pin:"2222",isAdmin:false,colorIdx:1},
+      {id:3,name:"USMAN",role:"Sales & Accounts Supervisor",pin:"3333",isAdmin:false,colorIdx:2},
+      {id:4,name:"NOOR MOHAMMED",role:"Office Assistant",pin:"4444",isAdmin:false,colorIdx:3},
+      {id:4,name:"WAJID",role:"Sales Executive",pin:"5555",isAdmin:false,colorIdx:3},
+      {id:5,name:"ZAID",role:"Admin",pin:"0909",isAdmin:true,colorIdx:4},
     ];
     await saveEmployees();
   }
