@@ -1,0 +1,583 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{font-family:var(--font-sans);font-size:15px;-webkit-tap-highlight-color:transparent;}
+.screen{display:none;}.screen.active{display:block;}
+
+/* LOGIN */
+.login-wrap{max-width:420px;margin:0 auto;padding:2rem 1.25rem 3rem;}
+.login-wrap h2{font-size:22px;font-weight:500;margin-bottom:4px;}
+.sub{font-size:14px;color:var(--color-text-secondary);margin-bottom:1.5rem;}
+.emp-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.25rem;}
+.emp-btn{display:flex;align-items:center;gap:12px;padding:14px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);cursor:pointer;font-size:15px;color:var(--color-text-primary);text-align:left;width:100%;min-height:58px;-webkit-tap-highlight-color:transparent;}
+.emp-btn:active{opacity:0.7;}
+.emp-btn.selected{border-color:var(--color-border-info);background:var(--color-background-info);color:var(--color-text-info);}
+.avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;flex-shrink:0;}
+.pin-label{font-size:13px;color:var(--color-text-secondary);margin-bottom:6px;}
+.pin-row{display:flex;gap:8px;margin-bottom:8px;}
+.pin-row input{flex:1;text-align:center;letter-spacing:0.25em;font-size:20px;padding:14px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);font-family:var(--font-sans);}
+.pin-row input:focus{outline:none;border-color:var(--color-border-info);}
+.err{font-size:13px;color:var(--color-text-danger);min-height:18px;margin-bottom:10px;}
+.btn{display:flex;align-items:center;justify-content:center;padding:14px 20px;font-size:15px;font-weight:500;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);background:var(--color-background-primary);color:var(--color-text-primary);cursor:pointer;font-family:var(--font-sans);min-height:52px;width:100%;-webkit-tap-highlight-color:transparent;}
+.btn:active{opacity:0.7;}
+.btn-sm{padding:8px 14px;font-size:13px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);background:transparent;cursor:pointer;color:var(--color-text-secondary);font-family:var(--font-sans);min-height:36px;white-space:nowrap;-webkit-tap-highlight-color:transparent;}
+.btn-sm:active{opacity:0.7;}
+.btn-danger{padding:8px 14px;font-size:13px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-danger);background:transparent;cursor:pointer;color:var(--color-text-danger);font-family:var(--font-sans);min-height:36px;-webkit-tap-highlight-color:transparent;}
+.btn-danger:active{opacity:0.7;}
+.btn-success{padding:8px 14px;font-size:13px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-success);background:transparent;cursor:pointer;color:var(--color-text-success);font-family:var(--font-sans);min-height:36px;-webkit-tap-highlight-color:transparent;}
+.btn-success:active{opacity:0.7;}
+
+/* APP */
+.app-wrap{padding:0 1.25rem 4rem;max-width:600px;margin:0 auto;}
+.header{display:flex;align-items:center;justify-content:space-between;padding:1rem 0;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:1.25rem;gap:10px;}
+.header-left{display:flex;align-items:center;gap:10px;min-width:0;}
+.header-left .avatar{width:40px;height:40px;font-size:14px;flex-shrink:0;}
+.header-left h2{font-size:16px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.header-left p{font-size:12px;color:var(--color-text-secondary);}
+.hdr-actions{display:flex;gap:6px;flex-shrink:0;}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--color-background-primary);border-top:0.5px solid var(--color-border-tertiary);display:flex;z-index:50;padding-bottom:env(safe-area-inset-bottom);}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px 8px;cursor:pointer;color:var(--color-text-secondary);font-size:11px;gap:4px;min-height:56px;border:none;background:transparent;font-family:var(--font-sans);-webkit-tap-highlight-color:transparent;}
+.nav-item.active{color:var(--color-text-info);}
+.nav-icon{font-size:20px;line-height:1;}
+.tab-panel{display:none;padding-bottom:1rem;}.tab-panel.active{display:block;}
+
+/* FORM */
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem;margin-bottom:1rem;}
+.form-label{font-size:13px;color:var(--color-text-secondary);display:block;margin-bottom:6px;margin-top:14px;}
+.form-label:first-child{margin-top:0;}
+input[type=text],input[type=email],input[type=tel],textarea,select{width:100%;font-family:var(--font-sans);font-size:15px;padding:12px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--color-border-info);}
+textarea{height:90px;resize:vertical;}
+.success-banner{background:var(--color-background-success);border:0.5px solid var(--color-border-success);border-radius:var(--border-radius-md);padding:12px 16px;font-size:14px;color:var(--color-text-success);margin-bottom:1rem;display:none;}
+
+/* LOGS */
+.log-item{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:10px;}
+.log-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;gap:8px;}
+.log-emp{display:flex;align-items:center;gap:8px;}
+.log-emp .avatar{width:26px;height:26px;font-size:10px;}
+.log-task{font-size:15px;margin-bottom:4px;line-height:1.4;}
+.log-notes{font-size:13px;color:var(--color-text-secondary);line-height:1.4;}
+.log-date{font-size:12px;color:var(--color-text-secondary);white-space:nowrap;}
+.log-actions{display:flex;gap:6px;flex-shrink:0;}
+.badge{display:inline-block;font-size:12px;padding:3px 10px;border-radius:var(--border-radius-md);margin-top:6px;font-weight:500;}
+.badge-done{background:var(--color-background-success);color:var(--color-text-success);}
+.badge-progress{background:var(--color-background-info);color:var(--color-text-info);}
+.badge-blocked{background:var(--color-background-danger);color:var(--color-text-danger);}
+.empty{text-align:center;padding:3rem 1rem;color:var(--color-text-secondary);font-size:14px;}
+
+/* DASHBOARD */
+.metric-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:1.25rem;}
+.metric{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:1rem;text-align:center;}
+.metric-val{font-size:28px;font-weight:500;}
+.metric-lbl{font-size:12px;color:var(--color-text-secondary);margin-top:2px;}
+.section-title{font-size:13px;font-weight:500;color:var(--color-text-secondary);margin-bottom:10px;}
+.today-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:0.5px solid var(--color-border-tertiary);}
+.today-row:last-child{border-bottom:none;}
+.today-status{font-size:13px;display:flex;align-items:center;gap:6px;}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0;}
+.dot-done{background:#1D9E75;}.dot-missing{background:#E24B4A;}.dot-progress{background:#378ADD;}.dot-blocked{background:#D85A30;}
+.filter-bar{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap;}
+.filter-btn{padding:6px 12px;font-size:13px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);background:transparent;cursor:pointer;color:var(--color-text-secondary);font-family:var(--font-sans);min-height:34px;-webkit-tap-highlight-color:transparent;}
+.filter-btn.active{border-color:var(--color-border-info);background:var(--color-background-info);color:var(--color-text-info);font-weight:500;}
+.date-range-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:1rem;}
+.date-range-row input[type=date]{font-family:var(--font-sans);font-size:13px;padding:8px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);flex:1;min-width:120px;}
+.toolbar{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;align-items:center;justify-content:space-between;}
+
+/* ADMIN */
+.emp-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:0.5px solid var(--color-border-tertiary);gap:8px;}
+.emp-row:last-child{border-bottom:none;}
+.emp-row-left{display:flex;align-items:center;gap:10px;min-width:0;}
+.emp-row-actions{display:flex;gap:6px;flex-shrink:0;}
+
+/* NOTIFY */
+.notif-tab-bar{display:flex;gap:4px;margin-bottom:1rem;}
+.notif-tab{padding:8px 16px;font-size:14px;border-radius:var(--border-radius-md);border:0.5px solid transparent;cursor:pointer;background:transparent;color:var(--color-text-secondary);font-family:var(--font-sans);-webkit-tap-highlight-color:transparent;}
+.notif-tab.active{background:var(--color-background-secondary);border-color:var(--color-border-tertiary);color:var(--color-text-primary);font-weight:500;}
+.notif-panel{display:none;}.notif-panel.active{display:block;}
+.preview-box{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:1rem;font-size:13px;color:var(--color-text-primary);white-space:pre-wrap;line-height:1.6;margin-bottom:1rem;border:0.5px solid var(--color-border-tertiary);min-height:120px;}
+
+/* MODAL */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:flex-end;justify-content:center;z-index:200;padding:0;}
+.modal{background:var(--color-background-primary);border-radius:20px 20px 0 0;padding:1.5rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom));width:100%;max-width:600px;}
+.modal h3{font-size:17px;font-weight:500;margin-bottom:1rem;}
+.modal-actions{display:flex;gap:8px;margin-top:1.25rem;}
+.modal-actions button{flex:1;}
+</style>
+
+<div id="s-loading" class="screen active"><div class="empty">Loading...</div></div>
+
+<div id="s-login" class="screen">
+  <div class="login-wrap">
+    <h2>Work Log</h2>
+    <p class="sub">Select your name then enter your PIN.</p>
+    <div class="emp-grid" id="emp-grid"></div>
+    <p class="pin-label">PIN</p>
+    <div class="pin-row"><input type="password" id="pin-input" placeholder="••••" maxlength="4" inputmode="numeric"/></div>
+    <div class="err" id="err-msg"></div>
+    <button class="btn" onclick="doLogin()">Sign in</button>
+  </div>
+</div>
+
+<div id="s-app" class="screen">
+  <div class="app-wrap">
+    <div class="header">
+      <div class="header-left">
+        <div class="avatar" id="hdr-av"></div>
+        <div><h2 id="hdr-name"></h2><p id="hdr-role"></p></div>
+      </div>
+      <div class="hdr-actions">
+        <button class="btn-sm" id="admin-btn" style="display:none" onclick="openAdmin()">Team</button>
+        <button class="btn-sm" id="signout-btn" onclick="logout()">Sign out</button>
+      </div>
+    </div>
+
+    <div id="tab-log" class="tab-panel active">
+      <div class="success-banner" id="success-banner">Work log submitted!</div>
+      <div class="card">
+        <label class="form-label">What did you work on today?</label>
+        <input type="text" id="task-input" placeholder="e.g. Client calls, report, support..."/>
+        <label class="form-label">Status</label>
+        <select id="status-input"><option value="done">Done</option><option value="progress">In progress</option><option value="blocked">Blocked</option></select>
+        <label class="form-label">Notes (optional)</label>
+        <textarea id="notes-input" placeholder="Any details, blockers, or updates..."></textarea>
+        <button class="btn" style="margin-top:14px;" onclick="submitLog()">Submit today's log</button>
+      </div>
+    </div>
+
+    <div id="tab-my" class="tab-panel"><div id="my-logs-list"></div></div>
+
+    <div id="tab-dash" class="tab-panel">
+      <div class="metric-grid" id="dash-metrics"></div>
+      <div class="card">
+        <div class="section-title">Today's status</div>
+        <div id="today-status-list"></div>
+      </div>
+      <div class="date-range-row">
+        <input type="date" id="date-from"/><input type="date" id="date-to"/>
+        <button class="filter-btn active" onclick="applyDateFilter()">Apply</button>
+        <button class="filter-btn" onclick="clearDateFilter()">Clear</button>
+      </div>
+      <div class="toolbar">
+        <div class="filter-bar" id="emp-filter-bar"></div>
+        <button class="btn-success" onclick="exportXLSX()">Export Excel</button>
+      </div>
+      <div id="all-logs-list"></div>
+    </div>
+
+    <div id="tab-notif" class="tab-panel">
+      <div class="card">
+        <div class="section-title">Send daily summary</div>
+        <div class="notif-tab-bar">
+          <button class="notif-tab active" onclick="switchNotifTab('email',this)">Email</button>
+          <button class="notif-tab" onclick="switchNotifTab('whatsapp',this)">WhatsApp</button>
+        </div>
+        <div id="notif-email" class="notif-panel active">
+          <label class="form-label">Recipient email</label>
+          <input type="email" id="notif-email-addr" placeholder="manager@company.com"/>
+          <label class="form-label">Preview</label>
+          <div class="preview-box" id="email-preview"></div>
+          <button class="btn" onclick="sendEmail()">Open in email</button>
+        </div>
+        <div id="notif-whatsapp" class="notif-panel">
+          <label class="form-label">WhatsApp number (with country code)</label>
+          <input type="tel" id="notif-wa-num" placeholder="+91 98765 43210"/>
+          <label class="form-label">Preview</label>
+          <div class="preview-box" id="wa-preview"></div>
+          <button class="btn" onclick="sendWhatsApp()">Open in WhatsApp</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav" id="bottom-nav"></nav>
+</div>
+
+<div id="s-admin" class="screen">
+  <div class="app-wrap">
+    <div class="header">
+      <div class="header-left"><div><h2>Manage team</h2><p style="font-size:12px;color:var(--color-text-secondary);">Add, edit, or remove employees</p></div></div>
+      <button class="btn-sm" onclick="showScreen('s-app')">Back</button>
+    </div>
+    <div class="card"><div id="emp-admin-list"></div></div>
+    <button class="btn" onclick="openEmpModal(null)">+ Add employee</button>
+  </div>
+</div>
+
+<div id="modal-emp" class="modal-backdrop" style="display:none;">
+  <div class="modal">
+    <h3 id="modal-emp-title">Add employee</h3>
+    <label class="form-label">Full name</label><input type="text" id="m-name" placeholder="e.g. Arjun Mehta"/>
+    <label class="form-label">Role / department</label><input type="text" id="m-role" placeholder="e.g. Sales"/>
+    <label class="form-label">PIN (4 digits)</label><input type="password" id="m-pin" maxlength="4" inputmode="numeric" placeholder="••••" style="letter-spacing:0.2em;font-size:20px;"/>
+    <label class="form-label">Admin / manager access?</label>
+    <select id="m-admin"><option value="0">No</option><option value="1">Yes — can see all logs & dashboard</option></select>
+    <div class="err" id="modal-emp-err"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeEmpModal()">Cancel</button>
+      <button class="btn" onclick="saveEmployee()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-log" class="modal-backdrop" style="display:none;">
+  <div class="modal">
+    <h3>Edit log entry</h3>
+    <label class="form-label">Task</label><input type="text" id="ml-task"/>
+    <label class="form-label">Status</label>
+    <select id="ml-status"><option value="done">Done</option><option value="progress">In progress</option><option value="blocked">Blocked</option></select>
+    <label class="form-label">Notes</label><textarea id="ml-notes" style="height:70px;"></textarea>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeLogModal()">Cancel</button>
+      <button class="btn" onclick="saveLogEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const COLORS=[{bg:'#B5D4F4',text:'#0C447C'},{bg:'#9FE1CB',text:'#085041'},{bg:'#FAC775',text:'#633806'},{bg:'#F4C0D1',text:'#72243E'},{bg:'#CED0F6',text:'#3C3489'},{bg:'#C0DD97',text:'#27500A'},{bg:'#F5C4B3',text:'#712B13'},{bg:'#D3D1C7',text:'#444441'}];
+let employees=[],logs=[],currentUser=null,selectedEmpId=null,editingEmpId=null,editingLogId=null;
+let filterEmpId='all',filterFrom=null,filterTo=null,activeTab='tab-log';
+
+async function init(){
+  try{const r=await window.storage.get('employees');if(r&&r.value)employees=JSON.parse(r.value);}catch(e){}
+  if(!employees.length){
+    employees=[
+      {id:1,name:"Arjun Mehta",role:"Sales",pin:"1234",isAdmin:false,colorIdx:0},
+      {id:2,name:"Priya Sharma",role:"Support",pin:"2222",isAdmin:false,colorIdx:1},
+      {id:3,name:"Rahul Nair",role:"Operations",pin:"3333",isAdmin:false,colorIdx:2},
+      {id:4,name:"Divya Iyer",role:"Finance",pin:"4444",isAdmin:false,colorIdx:3},
+      {id:5,name:"Kiran Reddy",role:"Admin",pin:"5555",isAdmin:true,colorIdx:4},
+    ];
+    await saveEmployees();
+  }
+  try{const r=await window.storage.get('logs');if(r&&r.value)logs=JSON.parse(r.value);}catch(e){}
+  showScreen('s-login');
+  buildLoginGrid();
+}
+
+async function saveEmployees(){try{await window.storage.set('employees',JSON.stringify(employees));}catch(e){}}
+async function saveLogs(){try{await window.storage.set('logs',JSON.stringify(logs));}catch(e){}}
+function empColor(e){return COLORS[e.colorIdx%COLORS.length];}
+function initials(n){return n.trim().split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2);}
+function todayStr(){return new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});}
+function newId(){return Date.now()+Math.floor(Math.random()*9999);}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function buildLoginGrid(){
+  const grid=document.getElementById('emp-grid');
+  grid.innerHTML='';
+  employees.forEach(e=>{
+    const c=empColor(e),btn=document.createElement('button');
+    btn.className='emp-btn';
+    btn.innerHTML=`<div class="avatar" style="background:${c.bg};color:${c.text};width:36px;height:36px;font-size:12px;">${initials(e.name)}</div><span>${e.name.split(' ')[0]}</span>`;
+    btn.addEventListener('click',()=>{
+      selectedEmpId=e.id;
+      document.querySelectorAll('.emp-btn').forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected');
+      document.getElementById('pin-input').focus();
+      document.getElementById('err-msg').textContent='';
+    });
+    grid.appendChild(btn);
+  });
+}
+
+function doLogin(){
+  const pin=document.getElementById('pin-input').value.trim();
+  const errEl=document.getElementById('err-msg');
+  if(!selectedEmpId){errEl.textContent='Please select your name.';return;}
+  const emp=employees.find(e=>e.id===selectedEmpId);
+  if(!emp||pin!==emp.pin){errEl.textContent='Incorrect PIN. Try again.';document.getElementById('pin-input').value='';return;}
+  currentUser=emp;
+  showApp();
+}
+document.getElementById('pin-input').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+
+function showApp(){
+  showScreen('s-app');
+  const c=empColor(currentUser);
+  const av=document.getElementById('hdr-av');
+  av.textContent=initials(currentUser.name);
+  av.style.background=c.bg;av.style.color=c.text;
+  document.getElementById('hdr-name').textContent=currentUser.name;
+  document.getElementById('hdr-role').textContent=currentUser.role+(currentUser.isAdmin?' · Admin':'');
+  document.getElementById('admin-btn').style.display=currentUser.isAdmin?'':'none';
+  buildBottomNav();
+  switchTab('tab-log');
+}
+
+function buildBottomNav(){
+  const tabs=currentUser.isAdmin
+    ?[['tab-log','✏️','Log'],['tab-my','📋','My logs'],['tab-dash','📊','Dashboard'],['tab-notif','🔔','Notify']]
+    :[['tab-log','✏️','Log'],['tab-my','📋','My logs']];
+  const nav=document.getElementById('bottom-nav');
+  nav.innerHTML='';
+  tabs.forEach(([id,icon,label])=>{
+    const btn=document.createElement('button');
+    btn.className='nav-item'+(id===activeTab?' active':'');
+    btn.innerHTML=`<span class="nav-icon">${icon}</span><span>${label}</span>`;
+    btn.addEventListener('click',()=>switchTab(id));
+    nav.appendChild(btn);
+  });
+}
+
+function switchTab(tabId){
+  activeTab=tabId;
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  const panel=document.getElementById(tabId);
+  if(panel)panel.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach((b,i)=>{
+    const tabs=currentUser.isAdmin?['tab-log','tab-my','tab-dash','tab-notif']:['tab-log','tab-my'];
+    b.classList.toggle('active',tabs[i]===tabId);
+  });
+  if(tabId==='tab-my')renderMyLogs();
+  if(tabId==='tab-dash')renderDashboard();
+  if(tabId==='tab-notif')renderNotifPreview();
+  window.scrollTo(0,0);
+}
+
+function logout(){
+  // Reset all state
+  currentUser=null;
+  selectedEmpId=null;
+  activeTab='tab-log';
+  filterEmpId='all';
+  filterFrom=null;
+  filterTo=null;
+  // Reset login form
+  document.getElementById('pin-input').value='';
+  document.getElementById('err-msg').textContent='';
+  // Reset all tab panels
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-log').classList.add('active');
+  // Reset form fields
+  document.getElementById('task-input').value='';
+  document.getElementById('notes-input').value='';
+  document.getElementById('status-input').value='done';
+  document.getElementById('success-banner').style.display='none';
+  // Clear bottom nav
+  document.getElementById('bottom-nav').innerHTML='';
+  // Go to login and rebuild grid
+  showScreen('s-login');
+  buildLoginGrid();
+}
+
+async function submitLog(){
+  const task=document.getElementById('task-input').value.trim();
+  if(!task){document.getElementById('task-input').focus();return;}
+  logs.unshift({id:newId(),empId:currentUser.id,empName:currentUser.name,task,status:document.getElementById('status-input').value,notes:document.getElementById('notes-input').value.trim(),date:todayStr(),ts:Date.now()});
+  await saveLogs();
+  document.getElementById('task-input').value='';
+  document.getElementById('notes-input').value='';
+  document.getElementById('status-input').value='done';
+  const b=document.getElementById('success-banner');b.style.display='block';
+  setTimeout(()=>b.style.display='none',3000);
+}
+
+function statusBadge(s){
+  if(s==='done')return'<span class="badge badge-done">Done</span>';
+  if(s==='progress')return'<span class="badge badge-progress">In progress</span>';
+  return'<span class="badge badge-blocked">Blocked</span>';
+}
+
+function renderMyLogs(){
+  const list=document.getElementById('my-logs-list');
+  const mine=logs.filter(l=>l.empId===currentUser.id);
+  if(!mine.length){list.innerHTML='<div class="empty">No logs yet. Submit your first log above.</div>';return;}
+  list.innerHTML=mine.map(l=>`<div class="log-item">
+    <div class="log-header"><span class="log-date">${l.date}</span>${statusBadge(l.status)}</div>
+    <div class="log-task">${l.task}</div>
+    ${l.notes?`<div class="log-notes">${l.notes}</div>`:''}
+  </div>`).join('');
+}
+
+function parseLogDate(str){
+  const months={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+  const p=str.split(' ');
+  return p.length===3?new Date(parseInt(p[2]),months[p[1]],parseInt(p[0])):new Date(str);
+}
+function getFilteredLogs(){
+  return logs.filter(l=>{
+    if(filterEmpId!=='all'&&l.empId!==parseInt(filterEmpId))return false;
+    if(filterFrom||filterTo){const d=parseLogDate(l.date);if(filterFrom&&d<filterFrom)return false;if(filterTo&&d>filterTo)return false;}
+    return true;
+  });
+}
+function applyDateFilter(){
+  const f=document.getElementById('date-from').value,t=document.getElementById('date-to').value;
+  filterFrom=f?new Date(f):null;filterTo=t?new Date(t):null;renderDashboard();
+}
+function clearDateFilter(){
+  filterFrom=null;filterTo=null;
+  document.getElementById('date-from').value='';document.getElementById('date-to').value='';
+  renderDashboard();
+}
+
+function renderDashboard(){
+  const today=todayStr(),tl=logs.filter(l=>l.date===today);
+  const logged=new Set(tl.map(l=>l.empId));
+  document.getElementById('dash-metrics').innerHTML=`
+    <div class="metric"><div class="metric-val">${employees.length}</div><div class="metric-lbl">Team size</div></div>
+    <div class="metric"><div class="metric-val">${logged.size}</div><div class="metric-lbl">Logged today</div></div>
+    <div class="metric"><div class="metric-val">${employees.length-logged.size}</div><div class="metric-lbl">Not logged</div></div>
+    <div class="metric"><div class="metric-val">${tl.filter(l=>l.status==='blocked').length}</div><div class="metric-lbl">Blocked</div></div>`;
+
+  document.getElementById('today-status-list').innerHTML=employees.map(e=>{
+    const el=tl.filter(l=>l.empId===e.id),c=empColor(e);
+    let dot,st;
+    if(!el.length){dot='dot-missing';st='Not logged yet';}
+    else{const s=el[0].status;dot=s==='done'?'dot-done':s==='progress'?'dot-progress':'dot-blocked';st=s==='done'?'Done':s==='progress'?'In progress':'Blocked';}
+    return`<div class="today-row">
+      <div class="log-emp"><div class="avatar" style="width:30px;height:30px;font-size:11px;background:${c.bg};color:${c.text}">${initials(e.name)}</div>
+        <div><div style="font-size:14px;">${e.name}</div><div style="font-size:12px;color:var(--color-text-secondary);">${e.role}</div></div></div>
+      <div class="today-status"><span class="dot ${dot}"></span>${st}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('emp-filter-bar').innerHTML=[{id:'all',label:'All'},...employees.map(e=>({id:e.id,label:e.name.split(' ')[0]}))].map(f=>
+    `<button class="filter-btn${filterEmpId==f.id?' active':''}" onclick="setEmpFilter('${f.id}')">${f.label}</button>`).join('');
+
+  const filtered=getFilteredLogs();
+  const list=document.getElementById('all-logs-list');
+  if(!filtered.length){list.innerHTML='<div class="empty">No logs found.</div>';return;}
+  list.innerHTML=filtered.map(l=>{
+    const emp=employees.find(e=>e.id===l.empId),c=emp?empColor(emp):COLORS[0];
+    return`<div class="log-item">
+      <div class="log-header">
+        <div class="log-emp"><div class="avatar" style="width:26px;height:26px;font-size:10px;background:${c.bg};color:${c.text}">${initials(l.empName)}</div>
+          <span style="font-size:14px;font-weight:500;">${l.empName}</span></div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+          <span class="log-date">${l.date}</span>
+          <button class="btn-sm" onclick="openLogModal(${l.id})">Edit</button>
+          <button class="btn-danger" onclick="deleteLog(${l.id})">Del</button>
+        </div>
+      </div>
+      <div class="log-task">${l.task}</div>
+      ${l.notes?`<div class="log-notes">${l.notes}</div>`:''}
+      ${statusBadge(l.status)}
+    </div>`;
+  }).join('');
+}
+
+function setEmpFilter(id){filterEmpId=id;renderDashboard();}
+
+function openLogModal(id){
+  const log=logs.find(l=>l.id===id);if(!log)return;
+  editingLogId=id;
+  document.getElementById('ml-task').value=log.task;
+  document.getElementById('ml-status').value=log.status;
+  document.getElementById('ml-notes').value=log.notes||'';
+  document.getElementById('modal-log').style.display='flex';
+}
+function closeLogModal(){document.getElementById('modal-log').style.display='none';}
+async function saveLogEdit(){
+  const idx=logs.findIndex(l=>l.id===editingLogId);if(idx<0)return;
+  logs[idx]={...logs[idx],task:document.getElementById('ml-task').value.trim(),status:document.getElementById('ml-status').value,notes:document.getElementById('ml-notes').value.trim()};
+  await saveLogs();closeLogModal();renderDashboard();
+}
+async function deleteLog(id){
+  if(!confirm('Delete this log entry?'))return;
+  logs=logs.filter(l=>l.id!==id);await saveLogs();renderDashboard();
+}
+
+function exportXLSX(){
+  const filtered=getFilteredLogs();
+  if(!filtered.length){alert('No logs to export.');return;}
+  const wb=XLSX.utils.book_new();
+  const data=[['Employee','Role','Date','Task','Status','Notes'],...filtered.map(l=>{
+    const emp=employees.find(e=>e.id===l.empId);
+    return[l.empName,emp?emp.role:'',l.date,l.task,l.status==='done'?'Done':l.status==='progress'?'In progress':'Blocked',l.notes||''];
+  })];
+  const ws=XLSX.utils.aoa_to_sheet(data);ws['!cols']=[{wch:20},{wch:14},{wch:14},{wch:40},{wch:14},{wch:40}];
+  XLSX.utils.book_append_sheet(wb,ws,'Work Logs');
+  const sum=[['Employee','Total','Done','In Progress','Blocked'],...employees.map(e=>{
+    const el=filtered.filter(l=>l.empId===e.id);
+    return[e.name,el.length,el.filter(l=>l.status==='done').length,el.filter(l=>l.status==='progress').length,el.filter(l=>l.status==='blocked').length];
+  })];
+  const ws2=XLSX.utils.aoa_to_sheet(sum);ws2['!cols']=[{wch:20},{wch:10},{wch:10},{wch:14},{wch:10}];
+  XLSX.utils.book_append_sheet(wb,ws2,'Summary');
+  XLSX.writeFile(wb,'work_logs_export.xlsx');
+}
+
+function buildSummaryText(){
+  const today=todayStr(),tl=logs.filter(l=>l.date===today);
+  const logged=new Set(tl.map(l=>l.empId));
+  let lines=[`Daily Work Summary — ${today}`,`Team logged: ${logged.size}/${employees.length}`,''];
+  employees.forEach(e=>{
+    const el=tl.filter(l=>l.empId===e.id);
+    lines.push(`${e.name} (${e.role})`);
+    if(!el.length)lines.push('  — Not logged yet');
+    else el.forEach(l=>lines.push(`  [${l.status==='done'?'Done':l.status==='progress'?'In progress':'Blocked'}] ${l.task}${l.notes?' — '+l.notes:''}`));
+    lines.push('');
+  });
+  return lines.join('\n');
+}
+function renderNotifPreview(){
+  const t=buildSummaryText();
+  document.getElementById('email-preview').textContent=t;
+  document.getElementById('wa-preview').textContent=t;
+}
+function switchNotifTab(tab,btn){
+  document.querySelectorAll('.notif-tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+  document.querySelectorAll('.notif-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('notif-'+tab).classList.add('active');
+}
+function sendEmail(){
+  const to=document.getElementById('notif-email-addr').value.trim();
+  window.open(`mailto:${to}?subject=${encodeURIComponent('Daily Work Summary — '+todayStr())}&body=${encodeURIComponent(buildSummaryText())}`,'_blank');
+}
+function sendWhatsApp(){
+  const num=document.getElementById('notif-wa-num').value.trim().replace(/\s+/g,'').replace(/^\+/,'');
+  window.open(`https://wa.me/${num}?text=${encodeURIComponent(buildSummaryText())}`,'_blank');
+}
+
+function openAdmin(){renderAdminList();showScreen('s-admin');}
+function renderAdminList(){
+  const list=document.getElementById('emp-admin-list');
+  if(!employees.length){list.innerHTML='<div class="empty">No employees yet.</div>';return;}
+  list.innerHTML=employees.map(e=>{
+    const c=empColor(e);
+    return`<div class="emp-row">
+      <div class="emp-row-left">
+        <div class="avatar" style="background:${c.bg};color:${c.text}">${initials(e.name)}</div>
+        <div><div style="font-size:14px;font-weight:500;">${e.name}</div><div style="font-size:12px;color:var(--color-text-secondary);">${e.role}${e.isAdmin?' · Admin':''}</div></div>
+      </div>
+      <div class="emp-row-actions">
+        <button class="btn-sm" onclick="openEmpModal(${e.id})">Edit</button>
+        <button class="btn-danger" onclick="deleteEmployee(${e.id})">Remove</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function openEmpModal(id){
+  editingEmpId=id;
+  document.getElementById('modal-emp-title').textContent=id?'Edit employee':'Add employee';
+  if(id){const e=employees.find(e=>e.id===id);document.getElementById('m-name').value=e.name;document.getElementById('m-role').value=e.role;document.getElementById('m-pin').value=e.pin;document.getElementById('m-admin').value=e.isAdmin?'1':'0';}
+  else{document.getElementById('m-name').value='';document.getElementById('m-role').value='';document.getElementById('m-pin').value='';document.getElementById('m-admin').value='0';}
+  document.getElementById('modal-emp-err').textContent='';
+  document.getElementById('modal-emp').style.display='flex';
+}
+function closeEmpModal(){document.getElementById('modal-emp').style.display='none';}
+async function saveEmployee(){
+  const name=document.getElementById('m-name').value.trim(),role=document.getElementById('m-role').value.trim(),pin=document.getElementById('m-pin').value.trim(),isAdmin=document.getElementById('m-admin').value==='1';
+  const errEl=document.getElementById('modal-emp-err');
+  if(!name){errEl.textContent='Please enter a name.';return;}
+  if(!pin||pin.length<4||isNaN(pin)){errEl.textContent='PIN must be 4 digits.';return;}
+  if(editingEmpId){const idx=employees.findIndex(e=>e.id===editingEmpId);if(idx>=0)employees[idx]={...employees[idx],name,role,pin,isAdmin};}
+  else{const used=employees.map(e=>e.colorIdx);const ci=COLORS.findIndex((_,i)=>!used.includes(i));employees.push({id:newId(),name,role,pin,isAdmin,colorIdx:ci>=0?ci:employees.length%COLORS.length});}
+  await saveEmployees();closeEmpModal();renderAdminList();
+}
+async function deleteEmployee(id){
+  if(!confirm('Remove this employee?'))return;
+  employees=employees.filter(e=>e.id!==id);await saveEmployees();renderAdminList();
+}
+
+init();
+</script>
