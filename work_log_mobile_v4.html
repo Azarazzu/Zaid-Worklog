@@ -439,7 +439,16 @@ let apiUrl='';
 // ── HELPERS ──
 function empColor(e){return COLORS[(e.colorIdx||0)%COLORS.length];}
 function initials(n){return(n||'').trim().split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2);}
-function todayStr(){return new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});}
+function todayStr(){
+  const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function formatDisplayDate(str){
+  // Convert YYYY-MM-DD or ISO to readable "11 Apr 2026"
+  if(!str)return'';
+  const d=new Date(str.length===10?str+'T00:00:00':str);
+  return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+}
 function newId(){return Date.now()+Math.floor(Math.random()*9999);}
 function $(id){return document.getElementById(id);}
 
@@ -671,7 +680,7 @@ async function renderMyLogs(){
     }
     if(!mine.length){list.innerHTML='<div class="empty">No logs yet.<br>Submit your first log above.</div>';return;}
     list.innerHTML=mine.map(l=>`<div class="log-item">
-      <div class="log-head"><span class="log-date">${l.date}</span>${statusBadge(l.status)}</div>
+      <div class="log-head"><span class="log-date">${formatDisplayDate(l.date)}</span>${statusBadge(l.status)}</div>
       <div class="log-task">${l.task}</div>
       ${l.notes?`<div class="log-notes">${l.notes}</div>`:''}
     </div>`).join('');
@@ -690,7 +699,7 @@ async function renderDashboard(){
       allLogs=JSON.parse(localStorage.getItem(LOGS_CACHE_KEY)||'[]');
     }
     logs=allLogs;
-    const today=todayStr(),tl=allLogs.filter(l=>l.date===today);
+    const today=todayStr(),tl=allLogs.filter(l=>normDateStr(l.date)===today);
     const logged=new Set(tl.map(l=>String(l.empId)));
     $('dash-metrics').innerHTML=`
       <div class="metric"><div class="metric-val">${employees.length}</div><div class="metric-lbl">Team size</div></div>
@@ -723,15 +732,36 @@ async function renderDashboard(){
 }
 
 function parseLogDate(str){
+  if(!str)return new Date(0);
+  // Already YYYY-MM-DD
+  if(/^\d{4}-\d{2}-\d{2}$/.test(str))return new Date(str+'T00:00:00');
+  // ISO with time e.g. 2026-04-11T18:30:00.000Z — extract date part only
+  if(/^\d{4}-\d{2}-\d{2}T/.test(str))return new Date(str.slice(0,10)+'T00:00:00');
+  // Old Indian format "11 Apr 2026"
   const months={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
-  const p=(str||'').split(' ');
-  return p.length===3?new Date(parseInt(p[2]),months[p[1]],parseInt(p[0])):new Date(str);
+  const p=str.split(' ');
+  if(p.length===3&&months[p[1]]!==undefined)return new Date(parseInt(p[2]),months[p[1]],parseInt(p[0]));
+  return new Date(str);
+}
+function normDateStr(str){
+  // Normalize any date string to YYYY-MM-DD
+  if(!str)return'';
+  if(/^\d{4}-\d{2}-\d{2}$/.test(str))return str;
+  if(/^\d{4}-\d{2}-\d{2}T/.test(str))return str.slice(0,10);
+  const d=parseLogDate(str);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 
 function getFilteredLogs(src){
   return(src||logs).filter(l=>{
     if(filterEmpId!=='all'&&String(l.empId)!==String(filterEmpId))return false;
-    if(filterFrom||filterTo){const d=parseLogDate(l.date);if(filterFrom&&d<filterFrom)return false;if(filterTo&&d>filterTo)return false;}
+    if(filterFrom||filterTo){
+      const logDate=normDateStr(l.date);
+      const fromStr=filterFrom?filterFrom.toISOString().slice(0,10):'';
+      const toStr=filterTo?filterTo.toISOString().slice(0,10):'';
+      if(fromStr&&logDate<fromStr)return false;
+      if(toStr&&logDate>toStr)return false;
+    }
     return true;
   });
 }
@@ -764,7 +794,8 @@ function renderFilteredLogs(src){
 function setEmpFilter(id){filterEmpId=id;renderFilteredLogs(logs);}
 function applyDateFilter(){
   const f=$('date-from').value,t=$('date-to').value;
-  filterFrom=f?new Date(f):null;filterTo=t?new Date(t):null;
+  filterFrom=f?new Date(f):null;
+  if(t){filterTo=new Date(t);filterTo.setHours(23,59,59,999);}else{filterTo=null;}
   renderFilteredLogs(logs);
 }
 function clearDateFilter(){
@@ -834,7 +865,7 @@ function exportXLSX(){
 
 // ── NOTIFY ──
 function buildSummaryText(){
-  const today=todayStr(),tl=logs.filter(l=>l.date===today);
+  const today=todayStr(),tl=logs.filter(l=>normDateStr(l.date)===today);
   const logged=new Set(tl.map(l=>String(l.empId)));
   let lines=[`Daily Work Summary — ${today}`,`Team logged: ${logged.size}/${employees.length}`,''];
   employees.forEach(e=>{
