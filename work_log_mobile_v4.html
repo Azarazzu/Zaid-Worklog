@@ -30,7 +30,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;f
   --bg-info:#0c2a45;--bg-success:#152a08;--bg-danger:#3a0f0f;--bg-warning:#3a2005;
   --text:#e8e6de;--text2:#9c9a92;--text3:#6b6a63;
   --text-info:#7ab8f0;--text-success:#8ec854;--text-danger:#f09595;--text-warning:#f0b060;
-  --border:rgba(255,255,255,0.12);--border2:rgba(255,255,255,0.22);--border3:rgba(255,255,255,0.35);
+  --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.18);--border3:rgba(255,255,255,0.3);
 }}
 
 /* ── SCREENS ── */
@@ -44,37 +44,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;f
 .login-outer{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;background:#111110;}
 @media(prefers-color-scheme:light){.login-outer{background:#eeede8;}}
 .login-wrap{width:100%;max-width:440px;background:#1e1e1c;border:1.5px solid #3a3a38;border-radius:var(--rxl);padding:2rem 1.5rem;box-shadow:0 8px 40px rgba(0,0,0,0.4);}
-@media(prefers-color-scheme:light){.login-wrap{background:#ffffff;border-color:rgba(0,0,0,0.1);box-shadow:0 4px 24px rgba(0,0,0,0.08);}}
+@media(prefers-color-scheme:light){.login-wrap{background:#ffffff;border-color:rgba(0,0,0,0.1);}}
 .login-wrap h2{font-size:22px;font-weight:600;margin-bottom:4px;color:#f0eeea;}
 @media(prefers-color-scheme:light){.login-wrap h2{color:#1a1a18;}}
 .sub{font-size:14px;color:#9c9a92;margin-bottom:1.5rem;}
 .emp-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.25rem;}
-.emp-btn{
-  display:flex;align-items:center;gap:12px;padding:12px 14px;
-  background:#2c2c2a;border:1.5px solid #3e3e3c;
-  border-radius:14px;cursor:pointer;text-align:left;width:100%;min-height:64px;
-  transition:border-color .15s,background .15s;
-}
+.emp-btn{display:flex;align-items:center;gap:12px;padding:12px 14px;background:#2c2c2a;border:1.5px solid #3e3e3c;border-radius:14px;cursor:pointer;text-align:left;width:100%;min-height:64px;transition:border-color .15s,background .15s;}
 .emp-btn:hover{background:#363634;border-color:#505050;}
 .emp-btn:active{opacity:0.8;}
 .emp-btn.selected{border-color:#378add !important;background:#0c2a45 !important;}
-.emp-btn .emp-name{
-  font-size:15px;font-weight:600;
-  color:#f0eeea;
-  letter-spacing:0.01em;
-  flex:1;
-}
+.emp-btn .emp-name{font-size:15px;font-weight:600;color:#f0eeea;letter-spacing:0.01em;flex:1;}
 @media(prefers-color-scheme:light){
-  .emp-btn{background:#f0efeb;border-color:#d8d7d3;}
-  .emp-btn:hover{background:#e8e7e3;border-color:#b0afab;}
+  .emp-btn{background:#f0efeb;border-color:#d0cfc9;}
+  .emp-btn:hover{background:#e8e7e3;}
   .emp-btn.selected{border-color:#378add !important;background:#e6f1fb !important;}
   .emp-btn .emp-name{color:#1a1a18;}
 }
 .avatar{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;flex-shrink:0;}
-.pin-label{font-size:11px;color:#9c9a92;margin-bottom:6px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;}
+.pin-label{font-size:13px;color:var(--text2);margin-bottom:6px;}
 .pin-input{width:100%;text-align:center;letter-spacing:0.3em;font-size:22px;padding:13px;border:1.5px solid #3a3a38;border-radius:var(--r);background:#2a2a28;color:#f0eeea;font-family:inherit;margin-bottom:8px;}
 @media(prefers-color-scheme:light){.pin-input{background:#fff;border-color:rgba(0,0,0,0.15);color:#1a1a18;}}
-.pin-input:focus{outline:none;border-color:#378add;box-shadow:0 0 0 3px rgba(55,138,221,0.15);}
+.pin-input:focus{outline:none;border-color:var(--border-info);}
 .err{font-size:13px;color:var(--text-danger);min-height:18px;margin-bottom:10px;}
 .btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:13px 20px;font-size:15px;font-weight:500;border:0.5px solid var(--border2);border-radius:var(--rl);background:var(--bg);color:var(--text);cursor:pointer;font-family:inherit;min-height:50px;width:100%;transition:background .15s;}
 .btn:hover{background:var(--bg2);}
@@ -85,15 +75,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;f
 
 /* ── APP LAYOUT ── */
 .app-layout{display:flex;flex-direction:column;min-height:100vh;}
-.app-header{background:var(--bg);border-bottom:0.5px solid var(--border);padding:0 1.25rem;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:40;gap:10px;}
+.app-header{background:var(--bg);border-bottom:1px solid var(--border);padding:0 1.25rem;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:40;gap:10px;}
+@media(prefers-color-scheme:dark){.app-header{background:#1a1a18;border-color:#3a3a38;}}
 .hdr-left{display:flex;align-items:center;gap:10px;min-width:0;}
 .hdr-left h2{font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);}
+@media(prefers-color-scheme:dark){.hdr-left h2{color:#f0eeea;}.hdr-left p{color:#9c9a92;}}
+@media(prefers-color-scheme:dark){.hdr-left h2{color:#f0eeea;}.hdr-left p{color:#9c9a92;}}
 .hdr-left p{font-size:12px;color:var(--text2);}
 .hdr-right{display:flex;gap:6px;flex-shrink:0;}
 .app-content{flex:1;padding:1.25rem;max-width:640px;margin:0 auto;width:100%;padding-bottom:80px;}
 
 /* ── BOTTOM NAV ── */
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:1px solid var(--border2);display:flex;z-index:40;padding-bottom:env(safe-area-inset-bottom,0px);}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:1px solid var(--border);display:flex;z-index:40;padding-bottom:env(safe-area-inset-bottom,0px);}
+@media(prefers-color-scheme:dark){.bottom-nav{background:#1a1a18;border-color:#3a3a38;}}
 .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px 6px;cursor:pointer;color:var(--text2);font-size:10px;font-family:inherit;gap:3px;min-height:52px;border:none;background:transparent;letter-spacing:0.02em;}
 .nav-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
 .nav-btn.active{color:var(--text-info);}
@@ -103,9 +97,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;f
 
 /* ── CARDS & FORMS ── */
 .card{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:1.25rem;margin-bottom:1rem;}
+@media(prefers-color-scheme:dark){.card{background:#242422;border-color:#3a3a38;}}
 .form-label{font-size:13px;color:var(--text2);display:block;margin-bottom:5px;margin-top:14px;}
 .form-label:first-child{margin-top:0;}
-input[type=text],input[type=email],input[type=tel],textarea,select{width:100%;font-family:inherit;font-size:15px;padding:11px 12px;border:0.5px solid var(--border);border-radius:var(--r);background:var(--bg);color:var(--text);}
+input[type=text],input[type=email],input[type=tel],textarea,select{width:100%;font-family:inherit;font-size:15px;padding:11px 12px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg);color:var(--text);}
+@media(prefers-color-scheme:dark){
+  input[type=text],input[type=email],input[type=tel],textarea,select{
+    background:#2a2a28;border-color:#3e3e3c;color:#e8e6de;
+  }
+}
 input:focus,textarea:focus,select:focus{outline:none;border-color:var(--border-info);}
 textarea{height:88px;resize:vertical;line-height:1.5;}
 select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6a63' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;}
@@ -128,9 +128,11 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 
 /* ── LOG ITEMS ── */
 .log-item{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:1rem 1.25rem;margin-bottom:10px;}
+@media(prefers-color-scheme:dark){.log-item{background:#242422;border-color:#3a3a38;}}
 .log-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;gap:8px;}
 .log-emp-row{display:flex;align-items:center;gap:8px;}
-.log-task{font-size:15px;margin-bottom:4px;line-height:1.4;}
+.log-task{font-size:15px;margin-bottom:4px;line-height:1.4;color:var(--text);}
+@media(prefers-color-scheme:dark){.log-task{color:#e8e6de;}}
 .log-notes{font-size:13px;color:var(--text2);line-height:1.4;margin-bottom:2px;}
 .log-date{font-size:12px;color:var(--text2);white-space:nowrap;}
 .log-actions{display:flex;gap:5px;flex-shrink:0;}
@@ -143,11 +145,18 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 /* ── DASHBOARD ── */
 .metric-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:1.25rem;}
 @media(min-width:480px){.metric-grid{grid-template-columns:repeat(4,1fr);}}
-.metric{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rl);padding:1rem;text-align:center;}
-.metric-val{font-size:28px;font-weight:600;line-height:1.1;}
+.metric{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:1rem;text-align:center;}
+@media(prefers-color-scheme:dark){.metric{background:#2a2a28;border-color:#3e3e3c;}}
+.metric-val{font-size:28px;font-weight:600;line-height:1.1;color:var(--text);}
 .metric-lbl{font-size:12px;color:var(--text2);margin-top:4px;}
+@media(prefers-color-scheme:dark){
+  .metric-val{color:#f0eeea;}
+  .metric-lbl{color:#9c9a92;}
+}
 .section-lbl{font-size:13px;font-weight:500;color:var(--text2);margin-bottom:10px;}
+@media(prefers-color-scheme:dark){.section-lbl{color:#9c9a92;}}
 .today-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border);}
+@media(prefers-color-scheme:dark){.today-row{border-color:#3a3a38;}}
 .today-row:last-child{border-bottom:none;}
 .status-pill{display:flex;align-items:center;gap:6px;font-size:13px;}
 .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
@@ -162,7 +171,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 .toolbar{display:flex;gap:8px;margin-bottom:1rem;align-items:center;justify-content:space-between;flex-wrap:wrap;}
 
 /* ── ADMIN ── */
-.emp-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);gap:8px;}
+.emp-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:0.5px solid var(--border);gap:8px;}
 .emp-row:last-child{border-bottom:none;}
 .emp-row-left{display:flex;align-items:center;gap:10px;min-width:0;}
 .emp-row-actions{display:flex;gap:6px;flex-shrink:0;}
@@ -418,6 +427,8 @@ const COLORS=[
 ];
 const CONFIG_KEY='worklog_api_url';
 const EMP_CACHE_KEY='worklog_employees';
+const LOGS_CACHE_KEY='worklog_logs';
+const CACHE_KEY='worklog_logs';
 
 // ── STATE ──
 let employees=[], logs=[], currentUser=null, selectedEmpId=null;
@@ -462,7 +473,7 @@ async function init(){
     if(!employees.length) setDefaultEmployees();
     showScreen('s-login');
     buildLoginGrid();
-    $('config-banner').style.display='block';
+    // Show config banner only — admin can set up via Team > DB Setup
     return;
   }
 
@@ -490,12 +501,12 @@ async function init(){
 
 function setDefaultEmployees(){
   employees=[
-    {id:1,name:"SURYA",role:"Service Engineer",pin:"1111",isAdmin:false,colorIdx:0},
-    {id:2,name:"SALMAN",role:"Sales Manager",pin:"2222",isAdmin:false,colorIdx:1},
-    {id:3,name:"USMAN",role:"Sales & Accounts Supervisor",pin:"3333",isAdmin:false,colorIdx:2},
-    {id:4,name:"NOOR",role:"Office Assistant",pin:"4444",isAdmin:false,colorIdx:3},
-    {id:5,name:"ZAID",role:"Admin",pin:"0987",isAdmin:true,colorIdx:4},
-    {id:6,name:"WAJID",role:"Sales Executive",pin:"5555",isAdmin:false,colorIdx:5},
+    {id:1,name:"Surya",role:"Staff",pin:"1111",isAdmin:false,colorIdx:0},
+    {id:2,name:"Salman",role:"Staff",pin:"2222",isAdmin:false,colorIdx:1},
+    {id:3,name:"Usman",role:"Staff",pin:"3333",isAdmin:false,colorIdx:2},
+    {id:4,name:"Noor",role:"Staff",pin:"4444",isAdmin:false,colorIdx:3},
+    {id:5,name:"Zaid",role:"Admin",pin:"0987",isAdmin:true,colorIdx:4},
+    {id:6,name:"Wajid",role:"Staff",pin:"5555",isAdmin:false,colorIdx:5},
   ];
 }
 
@@ -531,7 +542,7 @@ function buildLoginGrid(){
   employees.forEach(e=>{
     const c=empColor(e),btn=document.createElement('button');
     btn.className='emp-btn';
-    btn.innerHTML=`<div class="avatar" style="width:42px;height:42px;font-size:14px;font-weight:700;background:${c.bg};color:${c.text};flex-shrink:0;">${initials(e.name)}</div><span class="emp-name">${e.name.split(' ')[0]}</span>`;
+    btn.innerHTML=`<div class="avatar" style="width:42px;height:42px;font-size:14px;font-weight:700;background:${c.bg};color:${c.text};flex-shrink:0;">${initials(e.name)}</div><span class="emp-name">${e.name}</span>`;
     btn.addEventListener('click',()=>{
       selectedEmpId=e.id;
       document.querySelectorAll('.emp-btn').forEach(b=>b.classList.remove('selected'));
@@ -621,8 +632,17 @@ async function submitLog(){
   btn.innerHTML='<div class="spinner"></div> Saving...';btn.disabled=true;
   $('success-banner').style.display='none';$('error-banner').style.display='none';
   try{
+    const log={id:newId(),empId:currentUser.id,empName:currentUser.name,task,
+      status:$('status-input').value,notes:$('notes-input').value.trim(),date:todayStr(),ts:Date.now()};
     if(apiUrl){
-      await api({action:'addLog',empId:currentUser.id,empName:currentUser.name,task,status:$('status-input').value,notes:$('notes-input').value.trim(),date:todayStr()});
+      await api({action:'addLog',empId:log.empId,empName:log.empName,task:log.task,
+        status:log.status,notes:log.notes,date:log.date});
+    } else {
+      // No API — save to localStorage
+      const stored=JSON.parse(localStorage.getItem(LOGS_CACHE_KEY)||'[]');
+      stored.unshift(log);
+      localStorage.setItem(LOGS_CACHE_KEY,JSON.stringify(stored));
+      logs=stored;
     }
     $('task-input').value='';$('notes-input').value='';$('status-input').value='done';
     $('success-banner').style.display='block';
@@ -644,6 +664,10 @@ async function renderMyLogs(){
     if(apiUrl){
       const r=await api({action:'getLogs'});
       mine=(r.logs||[]).filter(l=>String(l.empId)===String(currentUser.id));
+    } else {
+      const stored=JSON.parse(localStorage.getItem(LOGS_CACHE_KEY)||'[]');
+      logs=stored;
+      mine=stored.filter(l=>String(l.empId)===String(currentUser.id));
     }
     if(!mine.length){list.innerHTML='<div class="empty">No logs yet.<br>Submit your first log above.</div>';return;}
     list.innerHTML=mine.map(l=>`<div class="log-item">
@@ -660,7 +684,11 @@ async function renderDashboard(){
   $('all-logs-list').innerHTML='';
   try{
     let allLogs=[];
-    if(apiUrl){const r=await api({action:'getLogs'});allLogs=r.logs||[];}
+    if(apiUrl){
+      const r=await api({action:'getLogs'});allLogs=r.logs||[];
+    } else {
+      allLogs=JSON.parse(localStorage.getItem(LOGS_CACHE_KEY)||'[]');
+    }
     logs=allLogs;
     const today=todayStr(),tl=allLogs.filter(l=>l.date===today);
     const logged=new Set(tl.map(l=>String(l.empId)));
@@ -678,7 +706,7 @@ async function renderDashboard(){
       return`<div class="today-row">
         <div class="log-emp-row">
           <div class="avatar" style="width:30px;height:30px;font-size:11px;background:${c.bg};color:${c.text};">${initials(e.name)}</div>
-          <div><div style="font-size:14px;">${e.name}</div><div style="font-size:12px;color:var(--text2);">${e.role}</div></div>
+          <div><div style="font-size:14px;font-weight:500;color:#f0eeea;">${e.name}</div><div style="font-size:12px;color:#9c9a92;">${e.role}</div></div>
         </div>
         <div class="status-pill"><span class="dot ${dot}"></span>${st}</div>
       </div>`;
@@ -718,7 +746,7 @@ function renderFilteredLogs(src){
       <div class="log-head">
         <div class="log-emp-row">
           <div class="avatar" style="width:26px;height:26px;font-size:10px;background:${c.bg};color:${c.text};">${initials(l.empName)}</div>
-          <span style="font-size:14px;font-weight:500;">${l.empName}</span>
+          <span style="font-size:14px;font-weight:500;color:#f0eeea;">${l.empName}</span>
         </div>
         <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;">
           <span class="log-date">${l.date}</span>
@@ -761,14 +789,27 @@ function closeLogModal(){$('modal-log').style.display='none';}
 async function saveLogEdit(){
   const task=$('ml-task').value.trim();if(!task)return;
   try{
-    await api({action:'updateLog',id:editingLogId,task,status:$('ml-status').value,notes:$('ml-notes').value.trim()});
+    if(apiUrl){
+      await api({action:'updateLog',id:editingLogId,task,status:$('ml-status').value,notes:$('ml-notes').value.trim()});
+    } else {
+      const idx=logs.findIndex(l=>String(l.id)===String(editingLogId));
+      if(idx>=0){logs[idx]={...logs[idx],task,status:$('ml-status').value,notes:$('ml-notes').value.trim()};}
+      localStorage.setItem(LOGS_CACHE_KEY,JSON.stringify(logs));
+    }
     closeLogModal();renderDashboard();
   }catch(e){alert('Could not update. Please try again.');}
 }
 async function deleteLog(id){
   if(!confirm('Delete this log entry?'))return;
-  try{await api({action:'deleteLog',id});renderDashboard();}
-  catch(e){alert('Could not delete. Please try again.');}
+  try{
+    if(apiUrl){
+      await api({action:'deleteLog',id});
+    } else {
+      logs=logs.filter(l=>String(l.id)!==String(id));
+      localStorage.setItem(LOGS_CACHE_KEY,JSON.stringify(logs));
+    }
+    renderDashboard();
+  }catch(e){alert('Could not delete. Please try again.');}
 }
 
 // ── EXPORT ──
@@ -858,7 +899,7 @@ function closeEmpModal(){$('modal-emp').style.display='none';}
 async function saveEmployee(){
   const name=$('m-name').value.trim(),role=$('m-role').value.trim(),pin=$('m-pin').value.trim(),isAdmin=$('m-admin').value==='1';
   if(!name){$('modal-emp-err').textContent='Please enter a name.';return;}
-  if(!pin||pin.length<4||isNaN(pin)){$('modal-emp-err').textContent='PIN must be 4 digits.';return;}
+  if(!pin||pin.length<4||!/^\d{4}$/.test(pin)){$('modal-emp-err').textContent='PIN must be exactly 4 digits.';return;}
   const used=employees.map(e=>e.colorIdx||0);
   if(editingEmpId){
     const idx=employees.findIndex(e=>e.id===editingEmpId);
@@ -868,7 +909,9 @@ async function saveEmployee(){
     employees.push({id:newId(),name,role,pin,isAdmin,colorIdx:ci>=0?ci:employees.length%COLORS.length});
   }
   try{
-    if(apiUrl)await api({action:'saveEmployees',data:JSON.stringify(employees)});
+    if(apiUrl){
+      await api({action:'saveEmployees',data:JSON.stringify(employees)});
+    }
     localStorage.setItem(EMP_CACHE_KEY,JSON.stringify(employees));
     closeEmpModal();renderAdminList();buildLoginGrid();
   }catch(e){$('modal-emp-err').textContent='Could not save. Check connection.';}
@@ -878,22 +921,15 @@ async function deleteEmployee(id){
   if(!confirm('Remove this employee?'))return;
   employees=employees.filter(e=>e.id!==id);
   try{
-    if(apiUrl)await api({action:'saveEmployees',data:JSON.stringify(employees)});
+    if(apiUrl){
+      await api({action:'saveEmployees',data:JSON.stringify(employees)});
+    }
     localStorage.setItem(EMP_CACHE_KEY,JSON.stringify(employees));
     renderAdminList();buildLoginGrid();
   }catch(e){alert('Could not delete. Check connection.');}
 }
 
 // ── START ──
-// Re-render avatars if user switches dark/light mode while app is open
-window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>{
-  if(currentUser){
-    const c=empColor(currentUser);
-    const av=$('hdr-av');
-    if(av){av.style.background=c.bg;av.style.color=c.text;}
-  }
-  buildLoginGrid();
-});
 init();
 </script>
 </body>
