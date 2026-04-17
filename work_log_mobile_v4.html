@@ -129,14 +129,14 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 /* ── LOG ITEMS ── */
 .log-item{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:1rem 1.25rem;margin-bottom:10px;}
 @media(prefers-color-scheme:dark){.log-item{background:#242422;border-color:#3a3a38;}}
-.log-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;gap:8px;}
+.log-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;}
 .log-emp-row{display:flex;align-items:center;gap:8px;}
 .log-task{font-size:15px;margin-bottom:4px;line-height:1.4;color:var(--text);}
 @media(prefers-color-scheme:dark){.log-task{color:#e8e6de;}}
 .log-notes{font-size:13px;color:var(--text2);line-height:1.4;margin-bottom:2px;}
 .log-date{font-size:12px;color:var(--text2);white-space:nowrap;}
 .log-actions{display:flex;gap:5px;flex-shrink:0;}
-.badge{display:inline-block;font-size:12px;padding:3px 10px;border-radius:var(--r);margin-top:6px;font-weight:500;}
+.badge{display:inline-flex;align-items:center;font-size:12px;padding:3px 10px;border-radius:var(--r);margin-top:0;font-weight:500;}
 .badge-done{background:var(--bg-success);color:var(--text-success);}
 .badge-progress{background:var(--bg-info);color:var(--text-info);}
 .badge-blocked{background:var(--bg-danger);color:var(--text-danger);}
@@ -399,7 +399,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 <!-- LOG EDIT MODAL -->
 <div id="modal-log" class="modal-backdrop" style="display:none;">
   <div class="modal">
-    <h3>Edit log entry</h3>
+    <h3 id="modal-log-title">Edit log entry</h3>
     <label class="form-label">Task</label>
     <input type="text" id="ml-task"/>
     <label class="form-label">Status</label>
@@ -431,7 +431,7 @@ const LOGS_CACHE_KEY='worklog_logs';
 const CACHE_KEY='worklog_logs';
 
 // ── STATE ──
-let employees=[], logs=[], currentUser=null, selectedEmpId=null;
+let employees=[], logs=[], myLogs=[], currentUser=null, selectedEmpId=null;
 let editingEmpId=null, editingLogId=null;
 let filterEmpId='all', filterFrom=null, filterTo=null, activeTab='tab-log';
 let apiUrl='';
@@ -679,8 +679,15 @@ async function renderMyLogs(){
       mine=stored.filter(l=>String(l.empId)===String(currentUser.id));
     }
     if(!mine.length){list.innerHTML='<div class="empty">No logs yet.<br>Submit your first log above.</div>';return;}
+    myLogs=mine;
     list.innerHTML=mine.map(l=>`<div class="log-item">
-      <div class="log-head"><span class="log-date">${formatDisplayDate(l.date)}</span>${statusBadge(l.status)}</div>
+      <div class="log-head">
+        <span class="log-date">${formatDisplayDate(l.date)}</span>
+        <div style="display:flex;align-items:center;gap:6px;">
+          ${statusBadge(l.status)}
+          <button class="btn-sm" style="font-size:12px;padding:4px 10px;" onclick="openMyLogModal('${l.id}')">Edit</button>
+        </div>
+      </div>
       <div class="log-task">${l.task}</div>
       ${l.notes?`<div class="log-notes">${l.notes}</div>`:''}
     </div>`).join('');
@@ -814,20 +821,39 @@ function openLogModal(id){
   const log=logs.find(l=>String(l.id)===String(id));if(!log)return;
   editingLogId=id;
   $('ml-task').value=log.task;$('ml-status').value=log.status;$('ml-notes').value=log.notes||'';
+  $('modal-log').dataset.from='dashboard';
+  $('modal-log-title').textContent='Edit log entry';
+  $('modal-log').style.display='flex';
+}
+function openMyLogModal(id){
+  // Search in myLogs (employee's own logs from My Logs tab)
+  const log=myLogs.find(l=>String(l.id)===String(id));
+  if(!log)return;
+  editingLogId=id;
+  $('ml-task').value=log.task;$('ml-status').value=log.status;$('ml-notes').value=log.notes||'';
+  // After save, refresh My Logs tab instead of dashboard
+  $('modal-log').dataset.from='myLogs';
+  $('modal-log-title').textContent='Edit my log';
   $('modal-log').style.display='flex';
 }
 function closeLogModal(){$('modal-log').style.display='none';}
 async function saveLogEdit(){
   const task=$('ml-task').value.trim();if(!task)return;
+  const fromMyLogs=$('modal-log').dataset.from==='myLogs';
   try{
     if(apiUrl){
       await api({action:'updateLog',id:editingLogId,task,status:$('ml-status').value,notes:$('ml-notes').value.trim()});
     } else {
+      // Update in both logs[] and myLogs[]
       const idx=logs.findIndex(l=>String(l.id)===String(editingLogId));
       if(idx>=0){logs[idx]={...logs[idx],task,status:$('ml-status').value,notes:$('ml-notes').value.trim()};}
+      const idx2=myLogs.findIndex(l=>String(l.id)===String(editingLogId));
+      if(idx2>=0){myLogs[idx2]={...myLogs[idx2],task,status:$('ml-status').value,notes:$('ml-notes').value.trim()};}
       localStorage.setItem(LOGS_CACHE_KEY,JSON.stringify(logs));
     }
-    closeLogModal();renderDashboard();
+    $('modal-log').dataset.from='';
+    closeLogModal();
+    if(fromMyLogs){renderMyLogs();}else{renderDashboard();}
   }catch(e){alert('Could not update. Please try again.');}
 }
 async function deleteLog(id){
