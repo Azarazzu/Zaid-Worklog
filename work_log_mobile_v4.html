@@ -199,6 +199,73 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 .modal h3{font-size:17px;font-weight:600;margin-bottom:1rem;}
 .modal-actions{display:flex;gap:8px;margin-top:1.25rem;}
 .modal-actions .btn{flex:1;}
+
+/* ── ATTENDANCE ── */
+.att-card{background:#242422;border:1px solid #3a3a38;border-radius:var(--rl);padding:1.25rem;margin-bottom:1rem;}
+@media(prefers-color-scheme:light){.att-card{background:#fff;border-color:rgba(0,0,0,0.1);}}
+.checkin-box{text-align:center;padding:1.5rem 1rem;}
+.checkin-time{font-size:42px;font-weight:700;color:#f0eeea;letter-spacing:0.02em;line-height:1;}
+@media(prefers-color-scheme:light){.checkin-time{color:#1a1a18;}}
+.checkin-date{font-size:13px;color:#9c9a92;margin-top:6px;margin-bottom:1.5rem;}
+.btn-checkin{width:100%;padding:16px;font-size:17px;font-weight:700;border:none;border-radius:var(--rl);cursor:pointer;font-family:inherit;letter-spacing:0.02em;transition:opacity .15s,transform .1s;}
+.btn-checkin:active{opacity:0.8;transform:scale(0.98);}
+.btn-checkin-in{background:#3aaa6e;color:#fff;}
+.btn-checkin-out{background:#e24b4a;color:#fff;}
+.btn-checkin-done{background:#3a3a38;color:#9c9a92;cursor:default;}
+.att-times{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:1rem;}
+.att-time-box{background:#2a2a28;border-radius:var(--r);padding:12px;text-align:center;}
+@media(prefers-color-scheme:light){.att-time-box{background:#f5f5f4;}}
+.att-time-val{font-size:20px;font-weight:600;color:#f0eeea;}
+@media(prefers-color-scheme:light){.att-time-val{color:#1a1a18;}}
+.att-time-lbl{font-size:11px;color:#9c9a92;margin-top:3px;text-transform:uppercase;letter-spacing:0.06em;}
+.att-status-row{display:flex;gap:8px;margin-top:1rem;}
+.att-status-btn{flex:1;padding:10px 6px;font-size:13px;font-weight:500;border-radius:var(--r);border:1.5px solid #3a3a38;background:transparent;cursor:pointer;color:#9c9a92;font-family:inherit;transition:all .15s;}
+.att-status-btn.active-present{border-color:#3aaa6e;background:#14391f;color:#6fcf97;}
+.att-status-btn.active-absent{border-color:#e24b4a;background:#3a0f0f;color:#f09595;}
+.att-status-btn.active-half{border-color:#c9a52a;background:#3d2e08;color:#f2c94c;}
+@media(prefers-color-scheme:light){
+  .att-status-btn.active-present{background:#eaf3de;color:#3b6d11;}
+  .att-status-btn.active-absent{background:#fcebeb;color:#a32d2d;}
+  .att-status-btn.active-half{background:#fef9c3;color:#854d0e;}
+}
+.att-hist-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #3a3a38;}
+.att-hist-row:last-child{border-bottom:none;}
+@media(prefers-color-scheme:light){.att-hist-row{border-color:rgba(0,0,0,0.08);}}
+.att-hist-date{font-size:13px;color:#f0eeea;font-weight:500;}
+@media(prefers-color-scheme:light){.att-hist-date{color:#1a1a18;}}
+.att-hist-times{font-size:12px;color:#9c9a92;}
+.att-badge{font-size:11px;padding:3px 10px;border-radius:var(--r);font-weight:600;}
+.att-badge-present{background:#14391f;color:#6fcf97;}
+.att-badge-absent{background:#3a0f0f;color:#f09595;}
+.att-badge-half{background:#3d2e08;color:#f2c94c;}
+.att-badge-pending{background:#0c2a45;color:#7ab8f0;}
+@media(prefers-color-scheme:light){
+  .att-badge-present{background:#eaf3de;color:#3b6d11;}
+  .att-badge-absent{background:#fcebeb;color:#a32d2d;}
+  .att-badge-half{background:#fef9c3;color:#854d0e;}
+  .att-badge-pending{background:#e6f1fb;color:#185fa5;}
+}
+/* ── LEAVE ── */
+.leave-tabs{display:flex;gap:4px;margin-bottom:1rem;}
+.leave-tab{padding:8px 16px;font-size:14px;border-radius:var(--r);border:0.5px solid transparent;cursor:pointer;background:transparent;color:#9c9a92;font-family:inherit;}
+.leave-tab.active{background:#2a2a28;border-color:#3a3a38;color:#f0eeea;font-weight:500;}
+@media(prefers-color-scheme:light){.leave-tab.active{background:#f0efeb;border-color:rgba(0,0,0,0.1);color:#1a1a18;}}
+.leave-panel{display:none;}.leave-panel.active{display:block;}
+.leave-req-card{background:#242422;border:1px solid #3a3a38;border-radius:var(--rl);padding:1rem 1.25rem;margin-bottom:10px;}
+@media(prefers-color-scheme:light){.leave-req-card{background:#fff;border-color:rgba(0,0,0,0.1);}}
+.leave-req-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.leave-req-name{font-size:14px;font-weight:600;color:#f0eeea;}
+@media(prefers-color-scheme:light){.leave-req-name{color:#1a1a18;}}
+.leave-req-meta{font-size:12px;color:#9c9a92;margin-bottom:4px;}
+.leave-req-reason{font-size:13px;color:#9c9a92;font-style:italic;}
+.leave-actions{display:flex;gap:6px;margin-top:10px;}
+.btn-approve{padding:7px 14px;font-size:13px;border-radius:var(--r);border:none;background:#3aaa6e;color:#fff;cursor:pointer;font-family:inherit;font-weight:500;}
+.btn-approve:active{opacity:0.8;}
+.btn-reject{padding:7px 14px;font-size:13px;border-radius:var(--r);border:none;background:#e24b4a;color:#fff;cursor:pointer;font-family:inherit;font-weight:500;}
+.btn-reject:active{opacity:0.8;}
+.admin-att-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid #3a3a38;}
+.admin-att-row:last-child{border-bottom:none;}
+@media(prefers-color-scheme:light){.admin-att-row{border-color:rgba(0,0,0,0.08);}}
 </style>
 </head>
 <body>
@@ -351,6 +418,80 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
             <div class="preview-box" id="wa-preview"></div>
             <button class="btn" onclick="sendWhatsApp()">Open in WhatsApp</button>
           </div>
+        </div>
+      </div>
+
+      <!-- ATTENDANCE TAB -->
+      <div id="tab-att" class="tab-panel">
+        <!-- Check-in/out card -->
+        <div class="att-card">
+          <div class="checkin-box">
+            <div class="checkin-time" id="live-clock">--:--:--</div>
+            <div class="checkin-date" id="live-date"></div>
+            <button class="btn-checkin btn-checkin-in" id="checkin-btn" onclick="handleCheckIn()">Check In</button>
+          </div>
+          <div class="att-times" id="att-times-display" style="display:none;">
+            <div class="att-time-box">
+              <div class="att-time-val" id="att-in-time">--:--</div>
+              <div class="att-time-lbl">Check In</div>
+            </div>
+            <div class="att-time-box">
+              <div class="att-time-val" id="att-out-time">--:--</div>
+              <div class="att-time-lbl">Check Out</div>
+            </div>
+          </div>
+        </div>
+        <!-- Status mark -->
+        <div class="att-card">
+          <div class="section-lbl" style="margin-bottom:10px;">Mark today's status</div>
+          <div class="att-status-row" id="att-status-row">
+            <button class="att-status-btn" id="att-btn-present" onclick="markAttStatus('present')">Present</button>
+            <button class="att-status-btn" id="att-btn-half" onclick="markAttStatus('half')">Half Day</button>
+            <button class="att-status-btn" id="att-btn-absent" onclick="markAttStatus('absent')">Absent</button>
+          </div>
+          <div id="att-status-saved" style="font-size:13px;color:#9c9a92;margin-top:10px;display:none;"></div>
+        </div>
+        <!-- My attendance history -->
+        <div class="section-lbl">My attendance</div>
+        <div class="att-card" style="padding:0 1.25rem;">
+          <div id="my-att-list"><div class="empty" style="padding:1.5rem;">Loading...</div></div>
+        </div>
+      </div>
+
+      <!-- LEAVE / PERMISSION TAB -->
+      <div id="tab-leave" class="tab-panel">
+        <div class="leave-tabs">
+          <button class="leave-tab active" onclick="switchLeaveTab('apply',this)">Apply</button>
+          <button class="leave-tab" onclick="switchLeaveTab('my',this)">My requests</button>
+          <button class="leave-tab" id="leave-admin-tab" onclick="switchLeaveTab('admin',this)" style="display:none;">Pending</button>
+        </div>
+        <!-- APPLY LEAVE -->
+        <div id="leave-apply" class="leave-panel active">
+          <div class="att-card">
+            <label class="form-label">Leave type</label>
+            <select id="leave-type">
+              <option value="sick">Sick Leave</option>
+              <option value="casual">Casual Leave</option>
+              <option value="permission">Permission (half day)</option>
+            </select>
+            <label class="form-label">From date</label>
+            <input type="date" id="leave-from" style="width:100%;"/>
+            <label class="form-label">To date</label>
+            <input type="date" id="leave-to" style="width:100%;"/>
+            <label class="form-label">Reason</label>
+            <textarea id="leave-reason" placeholder="Brief reason for leave or permission..." style="height:80px;"></textarea>
+            <div class="banner banner-success" id="leave-success-banner" style="margin-top:12px;">Request submitted!</div>
+            <div class="banner banner-err" id="leave-error-banner" style="margin-top:12px;">Could not submit. Try again.</div>
+            <button class="btn btn-primary" style="margin-top:14px;" onclick="submitLeaveRequest()">Submit request</button>
+          </div>
+        </div>
+        <!-- MY REQUESTS -->
+        <div id="leave-my" class="leave-panel">
+          <div id="my-leave-list"><div class="empty">Loading...</div></div>
+        </div>
+        <!-- ADMIN PENDING (admin only) -->
+        <div id="leave-admin" class="leave-panel">
+          <div id="admin-leave-list"><div class="empty">No pending requests.</div></div>
         </div>
       </div>
     </main>
@@ -587,11 +728,13 @@ function showApp(){
 
 function buildBottomNav(){
   const tabs=currentUser.isAdmin
-    ?[['tab-log','log','Log'],['tab-my','list','My logs'],['tab-dash','bar-chart','Dashboard'],['tab-notif','bell','Notify']]
-    :[['tab-log','log','Log'],['tab-my','list','My logs']];
+    ?[['tab-log','log','Log'],['tab-my','list','My logs'],['tab-att','att','Attendance'],['tab-leave','leave','Leave'],['tab-dash','bar-chart','Dashboard'],['tab-notif','bell','Notify']]
+    :[['tab-log','log','Log'],['tab-my','list','My logs'],['tab-att','att','Attendance'],['tab-leave','leave','Leave']];
   const icons={
     log:'<polyline points="12 20 12 10"/><polyline points="18 20 18 4"/><polyline points="6 20 6 16"/>',
     list:'<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>',
+    att:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+    leave:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
     'bar-chart':'<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>',
     bell:'<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
   };
@@ -610,17 +753,20 @@ function switchTab(tabId){
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   const panel=$(tabId);if(panel)panel.classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  const tabs=currentUser.isAdmin?['tab-log','tab-my','tab-dash','tab-notif']:['tab-log','tab-my'];
+  const tabs=currentUser.isAdmin?['tab-log','tab-my','tab-att','tab-leave','tab-dash','tab-notif']:['tab-log','tab-my','tab-att','tab-leave'];
   const idx=tabs.indexOf(tabId);
   const navBtns=document.querySelectorAll('.nav-btn');
   if(navBtns[idx])navBtns[idx].classList.add('active');
   if(tabId==='tab-my')renderMyLogs();
   if(tabId==='tab-dash')renderDashboard();
   if(tabId==='tab-notif')renderNotifPreview();
+  if(tabId==='tab-att')initAttTab();
+  if(tabId==='tab-leave')initLeaveTab();
   window.scrollTo(0,0);
 }
 
 function logout(){
+  if(clockTimer){clearInterval(clockTimer);clockTimer=null;}
   currentUser=null;selectedEmpId=null;activeTab='tab-log';
   filterEmpId='all';filterFrom=null;filterTo=null;logs=[];
   $('pin-input').value='';$('err-msg').textContent='';
@@ -732,6 +878,9 @@ async function renderDashboard(){
       `<button class="filter-btn${filterEmpId==f.id?' active':''}" onclick="setEmpFilter('${f.id}')">${f.label}</button>`).join('');
 
     renderFilteredLogs(allLogs);
+    // Load and show attendance summary
+    await loadAttRecords();
+    renderAttSummaryInDash();
   }catch(e){
     $('dash-metrics').innerHTML='';
     $('all-logs-list').innerHTML='<div class="empty">Could not load data. Check your connection.</div>';
@@ -984,6 +1133,329 @@ async function deleteEmployee(id){
     localStorage.setItem(EMP_CACHE_KEY,JSON.stringify(employees));
     renderAdminList();buildLoginGrid();
   }catch(e){alert('Could not delete. Check connection.');}
+}
+
+
+// ══════════════════════════════════════════════
+// ATTENDANCE & LEAVE SYSTEM
+// ══════════════════════════════════════════════
+
+let clockTimer = null;
+let attRecords = [];   // all attendance records
+let leaveRequests = []; // all leave requests
+const ATT_KEY = 'worklog_attendance';
+const LEAVE_KEY = 'worklog_leaves';
+
+// ── CLOCK ──
+function startClock(){
+  function tick(){
+    const now = new Date();
+    const el = $('live-clock');
+    const dl = $('live-date');
+    if(el) el.textContent = now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});
+    if(dl) dl.textContent = now.toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  }
+  tick();
+  if(clockTimer) clearInterval(clockTimer);
+  clockTimer = setInterval(tick, 1000);
+}
+
+// ── LOAD / SAVE ATT ──
+async function loadAttRecords(){
+  if(apiUrl){
+    try{ const r=await api({action:'getAttendance'}); attRecords=r.records||[]; }
+    catch(e){ attRecords=JSON.parse(localStorage.getItem(ATT_KEY)||'[]'); }
+  } else {
+    attRecords=JSON.parse(localStorage.getItem(ATT_KEY)||'[]');
+  }
+}
+async function saveAttRecord(rec){
+  attRecords = attRecords.filter(r=>!(String(r.empId)===String(rec.empId)&&r.date===rec.date));
+  attRecords.unshift(rec);
+  localStorage.setItem(ATT_KEY, JSON.stringify(attRecords));
+  if(apiUrl){ try{ await api({action:'saveAttendance', data:JSON.stringify(attRecords)}); }catch(e){} }
+}
+
+// ── LOAD / SAVE LEAVE ──
+async function loadLeaveRequests(){
+  if(apiUrl){
+    try{ const r=await api({action:'getLeaves'}); leaveRequests=r.requests||[]; }
+    catch(e){ leaveRequests=JSON.parse(localStorage.getItem(LEAVE_KEY)||'[]'); }
+  } else {
+    leaveRequests=JSON.parse(localStorage.getItem(LEAVE_KEY)||'[]');
+  }
+}
+async function saveLeaveRequests(){
+  localStorage.setItem(LEAVE_KEY, JSON.stringify(leaveRequests));
+  if(apiUrl){ try{ await api({action:'saveLeaves', data:JSON.stringify(leaveRequests)}); }catch(e){} }
+}
+
+// ── INIT ATTENDANCE TAB ──
+async function initAttTab(){
+  startClock();
+  await loadAttRecords();
+  const today = todayStr();
+  const myRec = attRecords.find(r=>String(r.empId)===String(currentUser.id)&&r.date===today);
+  renderCheckInUI(myRec);
+  renderMyAttHistory();
+}
+
+function renderCheckInUI(rec){
+  const btn = $('checkin-btn');
+  const timesDiv = $('att-times-display');
+  const inEl = $('att-in-time');
+  const outEl = $('att-out-time');
+
+  if(!rec || !rec.checkIn){
+    btn.textContent = 'Check In';
+    btn.className = 'btn-checkin btn-checkin-in';
+    btn.disabled = false;
+    timesDiv.style.display = 'none';
+  } else if(rec.checkIn && !rec.checkOut){
+    btn.textContent = 'Check Out';
+    btn.className = 'btn-checkin btn-checkin-out';
+    btn.disabled = false;
+    timesDiv.style.display = 'grid';
+    inEl.textContent = rec.checkIn;
+    outEl.textContent = '--:--';
+  } else {
+    btn.textContent = 'Checked Out ✓';
+    btn.className = 'btn-checkin btn-checkin-done';
+    btn.disabled = true;
+    timesDiv.style.display = 'grid';
+    inEl.textContent = rec.checkIn;
+    outEl.textContent = rec.checkOut;
+  }
+
+  // Status buttons
+  const statusMap = {present:'att-btn-present', half:'att-btn-half', absent:'att-btn-absent'};
+  Object.values(statusMap).forEach(id=>{ const b=$(id); if(b){b.className='att-status-btn';} });
+  if(rec && rec.status){
+    const activeId = statusMap[rec.status];
+    if(activeId){
+      const activeBtn = $(activeId);
+      if(activeBtn) activeBtn.className = 'att-status-btn active-'+rec.status;
+    }
+    const saved = $('att-status-saved');
+    if(saved){ saved.textContent = 'Status: '+rec.status.charAt(0).toUpperCase()+rec.status.slice(1); saved.style.display='block'; }
+  }
+}
+
+async function handleCheckIn(){
+  const today = todayStr();
+  const now = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true});
+  let rec = attRecords.find(r=>String(r.empId)===String(currentUser.id)&&r.date===today);
+
+  if(!rec || !rec.checkIn){
+    rec = {id:newId(), empId:currentUser.id, empName:currentUser.name, date:today, checkIn:now, checkOut:'', status:'present', ts:Date.now()};
+    // auto-mark present on check-in, half day if after 1pm
+    const hour = new Date().getHours();
+    rec.status = hour >= 13 ? 'half' : 'present';
+  } else if(!rec.checkOut){
+    rec = {...rec, checkOut:now};
+  }
+  await saveAttRecord(rec);
+  renderCheckInUI(rec);
+  renderMyAttHistory();
+  // refresh dashboard today count if admin
+  if(currentUser.isAdmin && activeTab==='tab-dash') renderDashboard();
+}
+
+async function markAttStatus(status){
+  const today = todayStr();
+  let rec = attRecords.find(r=>String(r.empId)===String(currentUser.id)&&r.date===today);
+  if(!rec){
+    rec = {id:newId(), empId:currentUser.id, empName:currentUser.name, date:today, checkIn:'', checkOut:'', status, ts:Date.now()};
+  } else {
+    rec = {...rec, status};
+  }
+  await saveAttRecord(rec);
+  renderCheckInUI(rec);
+  const saved=$('att-status-saved');
+  if(saved){ saved.textContent='Status saved: '+status.charAt(0).toUpperCase()+status.slice(1); saved.style.display='block'; }
+}
+
+function renderMyAttHistory(){
+  const list = $('my-att-list');
+  if(!list) return;
+  const mine = attRecords.filter(r=>String(r.empId)===String(currentUser.id)).slice(0,20);
+  if(!mine.length){ list.innerHTML='<div class="empty" style="padding:1.5rem;">No attendance records yet.</div>'; return; }
+  list.innerHTML = mine.map(r=>{
+    const badge = attBadge(r.status);
+    const times = r.checkIn ? (r.checkIn + (r.checkOut?' → '+r.checkOut:'')) : '—';
+    return `<div class="att-hist-row">
+      <div>
+        <div class="att-hist-date">${formatDisplayDate(r.date)}</div>
+        <div class="att-hist-times">${times}</div>
+      </div>
+      ${badge}
+    </div>`;
+  }).join('');
+}
+
+function attBadge(status){
+  const map = {present:'Present',half:'Half Day',absent:'Absent',pending:'Pending'};
+  const label = map[status]||status||'—';
+  return `<span class="att-badge att-badge-${status||'pending'}">${label}</span>`;
+}
+
+// ── ADMIN ATTENDANCE DASHBOARD ──
+async function renderAdminAttendance(){
+  await loadAttRecords();
+  const today = todayStr();
+  const todayRecs = attRecords.filter(r=>r.date===today);
+  const checkedIn = new Set(todayRecs.map(r=>String(r.empId)));
+
+  const list = $('admin-att-today');
+  if(!list) return;
+  list.innerHTML = employees.map(e=>{
+    const rec = todayRecs.find(r=>String(r.empId)===String(e.id));
+    const c = empColor(e);
+    const times = rec&&rec.checkIn ? (rec.checkIn+(rec.checkOut?' → '+rec.checkOut:'…')) : '—';
+    return `<div class="admin-att-row">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="avatar" style="width:30px;height:30px;font-size:11px;background:${c.bg};color:${c.text};">${initials(e.name)}</div>
+        <div>
+          <div style="font-size:14px;font-weight:500;color:#f0eeea;">${e.name}</div>
+          <div style="font-size:12px;color:#9c9a92;">${times}</div>
+        </div>
+      </div>
+      ${attBadge(rec?rec.status:'absent')}
+    </div>`;
+  }).join('');
+}
+
+// ── LEAVE / PERMISSION ──
+async function initLeaveTab(){
+  await loadLeaveRequests();
+  // Set default dates
+  const today = todayStr();
+  if($('leave-from')) $('leave-from').value = today;
+  if($('leave-to')) $('leave-to').value = today;
+  // Show admin tab for admin
+  const adminTab = $('leave-admin-tab');
+  if(adminTab) adminTab.style.display = currentUser.isAdmin ? '' : 'none';
+  renderMyLeaves();
+  if(currentUser.isAdmin) renderAdminLeaves();
+}
+
+function switchLeaveTab(tab, btn){
+  document.querySelectorAll('.leave-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.leave-panel').forEach(p=>p.classList.remove('active'));
+  $('leave-'+tab).classList.add('active');
+  if(tab==='my') renderMyLeaves();
+  if(tab==='admin') renderAdminLeaves();
+}
+
+async function submitLeaveRequest(){
+  const type = $('leave-type').value;
+  const from = $('leave-from').value;
+  const to = $('leave-to').value;
+  const reason = $('leave-reason').value.trim();
+  const okBanner = $('leave-success-banner');
+  const errBanner = $('leave-error-banner');
+  okBanner.style.display='none'; errBanner.style.display='none';
+
+  if(!from||!to||!reason){ errBanner.textContent='Please fill all fields.'; errBanner.style.display='block'; return; }
+  if(from>to){ errBanner.textContent='From date must be before To date.'; errBanner.style.display='block'; return; }
+
+  const req = {
+    id: newId(), empId: currentUser.id, empName: currentUser.name,
+    type, from, to, reason, status:'pending',
+    appliedOn: todayStr(), ts: Date.now()
+  };
+  leaveRequests.unshift(req);
+  await saveLeaveRequests();
+  $('leave-reason').value='';
+  okBanner.style.display='block';
+  setTimeout(()=>okBanner.style.display='none', 3000);
+  renderMyLeaves();
+}
+
+function leaveTypeName(t){ return {sick:'Sick Leave',casual:'Casual Leave',permission:'Permission'}[t]||t; }
+function leaveStatusBadge(s){
+  const map={pending:['att-badge-pending','Pending'],approved:['att-badge-present','Approved'],rejected:['att-badge-absent','Rejected']};
+  const [cls,label]=map[s]||['att-badge-pending',s];
+  return `<span class="att-badge ${cls}">${label}</span>`;
+}
+
+function renderMyLeaves(){
+  const list=$('my-leave-list'); if(!list)return;
+  const mine=leaveRequests.filter(r=>String(r.empId)===String(currentUser.id));
+  if(!mine.length){list.innerHTML='<div class="empty">No requests yet.</div>';return;}
+  list.innerHTML=mine.map(r=>`<div class="leave-req-card">
+    <div class="leave-req-head">
+      <span class="leave-req-name">${leaveTypeName(r.type)}</span>
+      ${leaveStatusBadge(r.status)}
+    </div>
+    <div class="leave-req-meta">${formatDisplayDate(r.from)}${r.from!==r.to?' → '+formatDisplayDate(r.to):''} · Applied ${formatDisplayDate(r.appliedOn)}</div>
+    <div class="leave-req-reason">"${r.reason}"</div>
+  </div>`).join('');
+}
+
+function renderAdminLeaves(){
+  const list=$('admin-leave-list'); if(!list)return;
+  const pending=leaveRequests.filter(r=>r.status==='pending');
+  const all=leaveRequests.slice(0,30);
+  const items=[...pending,...all.filter(r=>r.status!=='pending')];
+  if(!items.length){list.innerHTML='<div class="empty">No requests.</div>';return;}
+  list.innerHTML=items.map(r=>`<div class="leave-req-card">
+    <div class="leave-req-head">
+      <span class="leave-req-name">${r.empName} — ${leaveTypeName(r.type)}</span>
+      ${leaveStatusBadge(r.status)}
+    </div>
+    <div class="leave-req-meta">${formatDisplayDate(r.from)}${r.from!==r.to?' → '+formatDisplayDate(r.to):''} · Applied ${formatDisplayDate(r.appliedOn)}</div>
+    <div class="leave-req-reason">"${r.reason}"</div>
+    ${r.status==='pending'?`<div class="leave-actions">
+      <button class="btn-approve" onclick="handleLeave('${r.id}','approved')">Approve</button>
+      <button class="btn-reject" onclick="handleLeave('${r.id}','rejected')">Reject</button>
+    </div>`:''}
+  </div>`).join('');
+}
+
+async function handleLeave(id, status){
+  const idx=leaveRequests.findIndex(r=>String(r.id)===String(id));
+  if(idx<0)return;
+  leaveRequests[idx]={...leaveRequests[idx],status,decidedBy:currentUser.name,decidedOn:todayStr()};
+  await saveLeaveRequests();
+  renderAdminLeaves();
+  // If approved leave, auto-mark attendance as absent/half
+  const req=leaveRequests[idx];
+  if(status==='approved'){
+    const attStatus=req.type==='permission'?'half':'absent';
+    // mark for each day in range
+    let d=new Date(req.from+'T00:00:00');
+    const end=new Date(req.to+'T00:00:00');
+    while(d<=end){
+      const ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      await saveAttRecord({id:newId(),empId:req.empId,empName:req.empName,date:ds,checkIn:'',checkOut:'',status:attStatus,ts:Date.now()});
+      d.setDate(d.getDate()+1);
+    }
+  }
+}
+
+// ── DASHBOARD ATTENDANCE PANEL ──
+// Add attendance summary to admin dashboard
+function renderAttSummaryInDash(){
+  const el=$('dash-att-summary'); if(!el)return;
+  const today=todayStr();
+  const todayRecs=attRecords.filter(r=>r.date===today);
+  el.innerHTML=employees.map(e=>{
+    const rec=todayRecs.find(r=>String(r.empId)===String(e.id));
+    const c=empColor(e);
+    const times=rec&&rec.checkIn?(rec.checkIn+(rec.checkOut?' – '+rec.checkOut:'…')):'—';
+    return `<div class="admin-att-row">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="avatar" style="width:28px;height:28px;font-size:10px;background:${c.bg};color:${c.text};">${initials(e.name)}</div>
+        <div>
+          <div style="font-size:14px;font-weight:500;color:#f0eeea;">${e.name}</div>
+          <div style="font-size:12px;color:#9c9a92;">${times}</div>
+        </div>
+      </div>
+      ${attBadge(rec?rec.status:'absent')}
+    </div>`;
+  }).join('');
 }
 
 // ── START ──
