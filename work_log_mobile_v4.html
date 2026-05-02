@@ -655,6 +655,7 @@ const COLORS=[
 const CONFIG_KEY='worklog_api_url';
 const EMP_CACHE_KEY='worklog_employees';
 const LOGS_CACHE_KEY='worklog_logs';
+const CACHE_KEY='worklog_logs';
 
 // ── STATE ──
 let employees=[], logs=[], myLogs=[], currentUser=null, selectedEmpId=null;
@@ -1252,17 +1253,11 @@ async function loadAttRecords(){
   if(apiUrl){
     try{
       const r=await api({action:'getAttendance'});
-      // Normalize all dates and field names from server
-      attRecords=(r.records||[]).map(rec=>({
-        ...rec,
-        date: normDateStr(rec.date),        // always YYYY-MM-DD
-        checkIn:  rec.checkIn  || rec.checkin  || '',
-        checkOut: rec.checkOut || rec.checkout || '',
-        status:   rec.status   || '',
-        empId:    String(rec.empId),
-      }));
+      attRecords=r.records||[];
+      // Also sync to localStorage as cache
       localStorage.setItem(ATT_KEY, JSON.stringify(attRecords));
     } catch(e){
+      // Fall back to local cache
       attRecords=JSON.parse(localStorage.getItem(ATT_KEY)||'[]');
     }
   } else {
@@ -1270,7 +1265,19 @@ async function loadAttRecords(){
   }
 }
 async function saveAttRecord(rec){
-  // Step 1: Send to API first (Google Sheets upsert - safe, no data loss)
+  // Always reload fresh data first to avoid overwriting other users
+  if(apiUrl){
+    try{
+      const r=await api({action:'getAttendance'});
+      attRecords=r.records||[];
+    } catch(e){}
+  }
+  // Upsert: remove old record for same emp+date, add new
+  attRecords = attRecords.filter(r=>!(String(r.empId)===String(rec.empId)&&normDateStr(r.date)===normDateStr(rec.date)));
+  attRecords.unshift(rec);
+  // Save locally
+  localStorage.setItem(ATT_KEY, JSON.stringify(attRecords));
+  // Save to API — one row per record
   if(apiUrl){
     try{
       await api({action:'upsertAttendance',
@@ -1285,16 +1292,8 @@ async function saveAttRecord(rec){
       });
     } catch(e){ console.warn('Att save failed:', e); }
   }
-  // Step 2: Update local attRecords array with the new rec
-  attRecords = attRecords.filter(r=>
-    !(String(r.empId)===String(rec.empId) && normDateStr(r.date)===normDateStr(rec.date))
-  );
-  attRecords.unshift(rec);
-  // Step 3: Save to localStorage cache
-  localStorage.setItem(ATT_KEY, JSON.stringify(attRecords));
-  // Return the rec so caller can use it immediately for UI update
-  return rec;
 }
+
 // ── LOAD / SAVE LEAVE ──
 async function loadLeaveRequests(){
   if(apiUrl){
@@ -1352,7 +1351,7 @@ async function initAttTab(){
   startClock();
   await loadAttRecords(); // Always fetch fresh from server
   const today = todayStr();
-  const myRec = attRecords.find(r=>String(r.empId)===String(currentUser.id)&&normDateStr(r.date)===today);
+  const myRec = attRecords.find(r=>String(r.empId)===String(currentUser.id)&&r.date===today);
   renderCheckInUI(myRec);
   renderMyAttHistory();
 }
@@ -1398,88 +1397,236 @@ function renderCheckInUI(rec){
   }
 }
 
+async function handleCheckIn(){
+  const today = todayStr();
+  const now = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true});
+  let rec = attRecords.find(r=>String(r.empId)===String(currentUser.id)&&r.date===today);
+
+  if(!rec || !rec.checkIn){
+    rec = {id:newId(), empId:currentUser.id, empName:currentUser.name, date:today, checkIn:now, checkOut:'', status:'present', ts:Date.now()};
+    // auto-mark present on check-in, half day if after 1pm
+    const hour = new Date().getHours();
+    rec.status = hour >= 13 ? 'half' : 'present';
+  } else if(!rec.checkOut){
+    rec = {...rec, checkOut:now};
+  }
+  await saveAttRecord(rec);
+  renderCheckInUI(rec);
+  renderMyAttHistory();
+  // refresh dashboard today count if admin
+  if(currentUser.isAdmin && activeTab==='tab-dash') renderDashboard();
+}
+
+async function markAttStatus(status){
+  const today = todayStr();
+  let rec = attRecords.find(r=>String(r.empId)===String(currentUser.id)&&r.date===today);
+  if(!rec){
+    rec = {id:newId(), empId:currentUser.id, empName:currentUser.name, date:today, checkIn:'', checkOut:'', status, ts:Date.now()};
+  } else {
+    rec = {...rec, status};
+  }
+  await saveAttRecord(rec);
+  renderCheckInUI(rec);
+  const saved=$('att-status-saved');
+  if(saved){ saved.textContent='Status saved: '+status.charAt(0).toUpperCase()+status.slice(1); saved.style.display='block'; }
+}
+
 function renderMyAttHistory(){
   const list = $('my-att-list');
   if(!list) return;
-  const mine = attRecords
-    .filter(r=>String(r.empId)===String(currentUser.id))
-    .sort((a,b)=>normDateStr(b.date).localeCompare(normDateStr(a.date)))
-    .slice(0,30);
-  if(!mine.length){
-    list.innerHTML='<div class="empty" style="padding:1.5rem;">No attendance records yet.</div>';
-    return;
-  }
+  const mine = attRecords.filter(r=>String(r.empId)===String(currentUser.id)).slice(0,20);
+  if(!mine.length){ list.innerHTML='<div class="empty" style="padding:1.5rem;">No attendance records yet.</div>'; return; }
   list.innerHTML = mine.map(r=>{
     const badge = attBadge(r.status);
-    const times = r.checkIn
-      ? r.checkIn + (r.checkOut ? ' → ' + r.checkOut : ' (not checked out)')
-      : '—';
-    const hrs = r.checkIn && r.checkOut ? ' · ' + calcHours(r.checkIn, r.checkOut) : '';
+    const times = r.checkIn ? (r.checkIn + (r.checkOut?' → '+r.checkOut:'')) : '—';
     return `<div class="att-hist-row">
       <div>
         <div class="att-hist-date">${formatDisplayDate(r.date)}</div>
-        <div class="att-hist-times">${times}${hrs}</div>
+        <div class="att-hist-times">${times}</div>
       </div>
       ${badge}
     </div>`;
   }).join('');
 }
 
-
-async function handleCheckIn(){
-  const today = todayStr();
-  const now = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true});
-  // Use normDateStr for comparison to handle any date format from server
-  let rec = attRecords.find(r=>String(r.empId)===String(currentUser.id)&&normDateStr(r.date)===today);
-
-  if(!rec || !rec.checkIn){
-    rec = {id:newId(), empId:currentUser.id, empName:currentUser.name, date:today, checkIn:now, checkOut:'', status:'present', ts:Date.now()};
-    const hour = new Date().getHours();
-    rec.status = hour >= 13 ? 'half' : 'present';
-  } else if(rec.checkIn && !rec.checkOut){
-    rec = {...rec, checkOut:now};
-  } else {
-    // Already checked out — do nothing
-    return;
-  }
-  const saved = await saveAttRecord(rec);
-  renderCheckInUI(saved);      // use returned rec for immediate UI
-  renderMyAttHistory();        // refresh history list
-  if(currentUser.isAdmin && activeTab==='tab-dash') renderDashboard();
+function attBadge(status){
+  const map = {present:'Present',half:'Half Day',absent:'Absent',pending:'Pending'};
+  const label = map[status]||status||'—';
+  return `<span class="att-badge att-badge-${status||'pending'}">${label}</span>`;
 }
 
-async function markAttStatus(status){
+// ── ADMIN ATTENDANCE DASHBOARD ──
+async function renderAdminAttendance(){
+  await loadAttRecords();
   const today = todayStr();
-  let rec = attRecords.find(r=>String(r.empId)===String(currentUser.id)&&normDateStr(r.date)===today);
-  if(!rec){
-    rec = {id:newId(), empId:currentUser.id, empName:currentUser.name, date:today, checkIn:'', checkOut:'', status, ts:Date.now()};
-  } else {
-    rec = {...rec, status};
-  }
-  const saved = await saveAttRecord(rec);
-  renderCheckInUI(saved);
-  renderMyAttHistory();
-  const savedEl=$('att-status-saved');
-  if(savedEl){
-    savedEl.textContent='✓ Status saved: '+status.charAt(0).toUpperCase()+status.slice(1);
-    savedEl.style.display='block';
-    savedEl.style.color='#6fcf97';
-    setTimeout(()=>{if(savedEl)savedEl.style.display='none';},3000);
+  const todayRecs = attRecords.filter(r=>r.date===today);
+  const checkedIn = new Set(todayRecs.map(r=>String(r.empId)));
+
+  const list = $('admin-att-today');
+  if(!list) return;
+  list.innerHTML = employees.map(e=>{
+    const rec = todayRecs.find(r=>String(r.empId)===String(e.id));
+    const c = empColor(e);
+    const times = rec&&rec.checkIn ? (rec.checkIn+(rec.checkOut?' → '+rec.checkOut:'…')) : '—';
+    return `<div class="admin-att-row">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="avatar" style="width:30px;height:30px;font-size:11px;background:${c.bg};color:${c.text};">${initials(e.name)}</div>
+        <div>
+          <div style="font-size:14px;font-weight:500;color:#f0eeea;">${e.name}</div>
+          <div style="font-size:12px;color:#9c9a92;">${times}</div>
+        </div>
+      </div>
+      ${attBadge(rec?rec.status:'absent')}
+    </div>`;
+  }).join('');
+}
+
+// ── LEAVE / PERMISSION ──
+async function initLeaveTab(){
+  await loadLeaveRequests();
+  // Set default dates
+  const today = todayStr();
+  if($('leave-from')) $('leave-from').value = today;
+  if($('leave-to')) $('leave-to').value = today;
+  // Show admin tab for admin
+  const adminTab = $('leave-admin-tab');
+  if(adminTab) adminTab.style.display = currentUser.isAdmin ? '' : 'none';
+  renderMyLeaves();
+  if(currentUser.isAdmin) renderAdminLeaves();
+}
+
+function switchLeaveTab(tab, btn){
+  document.querySelectorAll('.leave-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.leave-panel').forEach(p=>p.classList.remove('active'));
+  $('leave-'+tab).classList.add('active');
+  if(tab==='my') renderMyLeaves();
+  if(tab==='admin') renderAdminLeaves();
+}
+
+async function submitLeaveRequest(){
+  const type = $('leave-type').value;
+  const from = $('leave-from').value;
+  const to = $('leave-to').value;
+  const reason = $('leave-reason').value.trim();
+  const okBanner = $('leave-success-banner');
+  const errBanner = $('leave-error-banner');
+  okBanner.style.display='none'; errBanner.style.display='none';
+
+  if(!from||!to||!reason){ errBanner.textContent='Please fill all fields.'; errBanner.style.display='block'; return; }
+  if(from>to){ errBanner.textContent='From date must be before To date.'; errBanner.style.display='block'; return; }
+
+  const req = {
+    id: newId(), empId: currentUser.id, empName: currentUser.name,
+    type, from, to, reason, status:'pending',
+    appliedOn: todayStr(), ts: Date.now()
+  };
+  await saveOneLeaveRequest(req);
+  $('leave-reason').value='';
+  okBanner.style.display='block';
+  setTimeout(()=>okBanner.style.display='none', 3000);
+  renderMyLeaves();
+}
+
+function leaveTypeName(t){ return {sick:'Sick Leave',casual:'Casual Leave',permission:'Permission'}[t]||t; }
+function leaveStatusBadge(s){
+  const map={pending:['att-badge-pending','Pending'],approved:['att-badge-present','Approved'],rejected:['att-badge-absent','Rejected']};
+  const [cls,label]=map[s]||['att-badge-pending',s];
+  return `<span class="att-badge ${cls}">${label}</span>`;
+}
+
+function renderMyLeaves(){
+  const list=$('my-leave-list'); if(!list)return;
+  const mine=leaveRequests.filter(r=>String(r.empId)===String(currentUser.id));
+  if(!mine.length){list.innerHTML='<div class="empty">No requests yet.</div>';return;}
+  list.innerHTML=mine.map(r=>`<div class="leave-req-card">
+    <div class="leave-req-head">
+      <span class="leave-req-name">${leaveTypeName(r.type)}</span>
+      ${leaveStatusBadge(r.status)}
+    </div>
+    <div class="leave-req-meta">${formatDisplayDate(r.from)}${r.from!==r.to?' → '+formatDisplayDate(r.to):''} · Applied ${formatDisplayDate(r.appliedOn)}</div>
+    <div class="leave-req-reason">"${r.reason}"</div>
+  </div>`).join('');
+}
+
+function renderAdminLeaves(){
+  const list=$('admin-leave-list'); if(!list)return;
+  const pending=leaveRequests.filter(r=>r.status==='pending');
+  const all=leaveRequests.slice(0,30);
+  const items=[...pending,...all.filter(r=>r.status!=='pending')];
+  if(!items.length){list.innerHTML='<div class="empty">No requests.</div>';return;}
+  list.innerHTML=items.map(r=>`<div class="leave-req-card">
+    <div class="leave-req-head">
+      <span class="leave-req-name">${r.empName} — ${leaveTypeName(r.type)}</span>
+      ${leaveStatusBadge(r.status)}
+    </div>
+    <div class="leave-req-meta">${formatDisplayDate(r.from)}${r.from!==r.to?' → '+formatDisplayDate(r.to):''} · Applied ${formatDisplayDate(r.appliedOn)}</div>
+    <div class="leave-req-reason">"${r.reason}"</div>
+    ${r.status==='pending'?`<div class="leave-actions">
+      <button class="btn-approve" onclick="handleLeave('${r.id}','approved')">Approve</button>
+      <button class="btn-reject" onclick="handleLeave('${r.id}','rejected')">Reject</button>
+    </div>`:''}
+  </div>`).join('');
+}
+
+async function handleLeave(id, status){
+  const idx=leaveRequests.findIndex(r=>String(r.id)===String(id));
+  if(idx<0)return;
+  const updatedReq={...leaveRequests[idx],status,decidedBy:currentUser.name,decidedOn:todayStr()};
+  leaveRequests[idx]=updatedReq;
+  await saveOneLeaveRequest(updatedReq);
+  renderAdminLeaves();
+  // If approved leave, auto-mark attendance as absent/half
+  const req=leaveRequests[idx];
+  if(status==='approved'){
+    const attStatus=req.type==='permission'?'half':'absent';
+    // mark for each day in range
+    let d=new Date(req.from+'T00:00:00');
+    const end=new Date(req.to+'T00:00:00');
+    while(d<=end){
+      const ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      await saveAttRecord({id:newId(),empId:req.empId,empName:req.empName,date:ds,checkIn:'',checkOut:'',status:attStatus,ts:Date.now()});
+      d.setDate(d.getDate()+1);
+    }
   }
 }
 
+// ── DASHBOARD ATTENDANCE PANEL ──
+// Add attendance summary to admin dashboard
+function renderAttSummaryInDash(){
+  const el=$('dash-att-summary'); if(!el)return;
+  const today=todayStr();
+  const todayRecs=attRecords.filter(r=>r.date===today);
+  el.innerHTML=employees.map(e=>{
+    const rec=todayRecs.find(r=>String(r.empId)===String(e.id));
+    const c=empColor(e);
+    const times=rec&&rec.checkIn?(rec.checkIn+(rec.checkOut?' – '+rec.checkOut:'…')):'—';
+    return `<div class="admin-att-row">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="avatar" style="width:28px;height:28px;font-size:10px;background:${c.bg};color:${c.text};">${initials(e.name)}</div>
+        <div>
+          <div style="font-size:14px;font-weight:500;color:#f0eeea;">${e.name}</div>
+          <div style="font-size:12px;color:#9c9a92;">${times}</div>
+        </div>
+      </div>
+      ${attBadge(rec?rec.status:'absent')}
+    </div>`;
+  }).join('');
+}
 
 
 // ══════════════════════════════════════════════
 // RECORDS & EXPORT SYSTEM
 // ══════════════════════════════════════════════
 
-let recType = 'att';
+let recType = 'att';          // 'att' | 'leave' | 'logs'
 let recFrom = null;
 let recTo   = null;
 let recEmpId = 'all';
 
+// ── INIT ──
 async function initRecordsTab(){
+  // Set default: current month
   const now = new Date();
   const y = now.getFullYear();
   const m = String(now.getMonth()+1).padStart(2,'0');
@@ -1487,35 +1634,34 @@ async function initRecordsTab(){
   const todayDefault = todayStr();
   if($('rec-from') && !$('rec-from').value) $('rec-from').value = fromDefault;
   if($('rec-to')   && !$('rec-to').value)   $('rec-to').value   = todayDefault;
+
+  // Populate employee filter
   const sel = $('rec-emp-filter');
   if(sel){
     sel.innerHTML = '<option value="all">All employees</option>' +
       employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
   }
+
+  // Load all data
   await loadAttRecords();
   await loadLeaveRequests();
-  // also load logs if not already loaded
-  if(!logs.length && apiUrl){
-    try{ const r=await api({action:'getLogs'}); logs=r.logs||[]; }catch(e){}
-  } else if(!logs.length){
-    logs=JSON.parse(localStorage.getItem(LOGS_CACHE_KEY)||'[]');
-  }
+
   applyRecFilter();
 }
 
 function setRecType(type, btn){
   recType = type;
   document.querySelectorAll('.rec-type-btn[id^="rec-btn-"]').forEach(b=>b.classList.remove('active'));
-  if(btn) btn.classList.add('active');
+  btn.classList.add('active');
   applyRecFilter();
 }
 
 function applyRecFilter(){
   const fv = $('rec-from') ? $('rec-from').value : '';
   const tv = $('rec-to')   ? $('rec-to').value   : '';
-  recFrom  = fv || null;
-  recTo    = tv || null;
-  recEmpId = $('rec-emp-filter') ? $('rec-emp-filter').value : 'all';
+  recFrom   = fv || null;
+  recTo     = tv || null;
+  recEmpId  = $('rec-emp-filter') ? $('rec-emp-filter').value : 'all';
   renderRecordsTable();
 }
 
@@ -1538,243 +1684,328 @@ function recEmpMatch(empId){
   return recEmpId==='all' || String(empId)===String(recEmpId);
 }
 
+// ── RENDER TABLE ──
 function renderRecordsTable(){
-  if(recType==='att')        renderAttRecords();
+  if(recType==='att')   renderAttRecords();
   else if(recType==='leave') renderLeaveRecords();
-  else                       renderLogRecords();
+  else                  renderLogRecords();
 }
 
-// ── ATTENDANCE RECORDS TABLE ──
+// ─── ATTENDANCE RECORDS ───
 function renderAttRecords(){
-  const thead=$('rec-thead'), tbody=$('rec-tbody'), summary=$('rec-summary');
+  const thead = $('rec-thead');
+  const tbody = $('rec-tbody');
+  const summary = $('rec-summary');
   if(!thead||!tbody) return;
+
   let rows = attRecords.filter(r=>recEmpMatch(r.empId)&&recDateInRange(r.date));
   rows.sort((a,b)=>normDateStr(b.date).localeCompare(normDateStr(a.date)));
-  const present=rows.filter(r=>r.status==='present').length;
-  const half=rows.filter(r=>r.status==='half').length;
-  const absent=rows.filter(r=>r.status==='absent').length;
-  const totalMins=rows.reduce((acc,r)=>{
-    const d=timeToMins(r.checkOut)-timeToMins(r.checkIn);
-    return acc+(d>0?d:0);
+
+  // Summary stats
+  const present = rows.filter(r=>r.status==='present').length;
+  const half    = rows.filter(r=>r.status==='half').length;
+  const absent  = rows.filter(r=>r.status==='absent').length;
+  const totalHours = rows.reduce((acc,r)=>{
+    if(r.checkIn && r.checkOut){
+      const diff = timeToMins(r.checkOut) - timeToMins(r.checkIn);
+      return acc + (diff>0?diff:0);
+    }
+    return acc;
   },0);
-  if(summary) summary.innerHTML=`
+
+  summary.innerHTML = `
     <div class="rec-stat"><div class="rec-stat-val" style="color:#6fcf97;">${present}</div><div class="rec-stat-lbl">Present</div></div>
     <div class="rec-stat"><div class="rec-stat-val" style="color:#f2c94c;">${half}</div><div class="rec-stat-lbl">Half Day</div></div>
     <div class="rec-stat"><div class="rec-stat-val" style="color:#f09595;">${absent}</div><div class="rec-stat-lbl">Absent</div></div>
-    <div class="rec-stat"><div class="rec-stat-val" style="color:#7ab8f0;">${formatHours(totalMins)}</div><div class="rec-stat-lbl">Total Hrs</div></div>`;
-  thead.innerHTML=`<tr><th>Employee</th><th>Date</th><th>Check In</th><th>Check Out</th><th>Hours</th><th>Status</th></tr>`;
-  if(!rows.length){tbody.innerHTML=`<tr><td colspan="6" class="rec-empty">No records found.</td></tr>`;return;}
-  tbody.innerHTML=rows.map(r=>{
-    const emp=employees.find(e=>String(e.id)===String(r.empId));
-    const c=emp?empColor(emp):COLORS[0];
-    const hrs=calcHours(r.checkIn,r.checkOut);
-    const sc={present:'#6fcf97',half:'#f2c94c',absent:'#f09595'}[r.status]||'#9c9a92';
-    return`<tr>
-      <td><div class="rec-emp-cell"><div class="avatar" style="width:26px;height:26px;font-size:10px;flex-shrink:0;background:${c.bg};color:${c.text};">${initials(r.empName||'')}</div><span>${r.empName||'—'}</span></div></td>
+    <div class="rec-stat"><div class="rec-stat-val" style="color:#7ab8f0;">${formatHours(totalHours)}</div><div class="rec-stat-lbl">Total Hrs</div></div>`;
+
+  thead.innerHTML = `<tr>
+    <th>Employee</th><th>Date</th><th>Check In</th><th>Check Out</th><th>Hours</th><th>Status</th>
+  </tr>`;
+
+  if(!rows.length){ tbody.innerHTML=`<tr><td colspan="6" class="rec-empty">No records found.</td></tr>`; return; }
+
+  tbody.innerHTML = rows.map(r=>{
+    const emp = employees.find(e=>String(e.id)===String(r.empId));
+    const c   = emp ? empColor(emp) : COLORS_LIGHT[0];
+    const hrs = calcHours(r.checkIn, r.checkOut);
+    const statusColor = {present:'#6fcf97',half:'#f2c94c',absent:'#f09595'}[r.status]||'#9c9a92';
+    return `<tr>
+      <td><div class="rec-emp-cell">
+        <div class="avatar" style="width:26px;height:26px;font-size:10px;flex-shrink:0;background:${c.bg};color:${c.text};">${initials(r.empName||'')}</div>
+        <span>${r.empName||'—'}</span>
+      </div></td>
       <td>${formatDisplayDate(r.date)}</td>
-      <td>${r.checkIn||'—'}</td><td>${r.checkOut||'—'}</td>
+      <td>${r.checkIn||'—'}</td>
+      <td>${r.checkOut||'—'}</td>
       <td class="rec-hours">${hrs}</td>
-      <td><span style="font-weight:600;color:${sc};">${(r.status||'—').charAt(0).toUpperCase()+(r.status||'').slice(1)}</span></td>
+      <td><span style="font-weight:600;color:${statusColor};">${(r.status||'—').charAt(0).toUpperCase()+(r.status||'').slice(1)}</span></td>
     </tr>`;
   }).join('');
 }
 
-// ── LEAVE RECORDS TABLE ──
+// ─── LEAVE RECORDS ───
 function renderLeaveRecords(){
-  const thead=$('rec-thead'), tbody=$('rec-tbody'), summary=$('rec-summary');
+  const thead = $('rec-thead');
+  const tbody = $('rec-tbody');
+  const summary = $('rec-summary');
   if(!thead||!tbody) return;
-  let rows=leaveRequests.filter(r=>recEmpMatch(r.empId)&&recDateInRange(r.from||r.fromDate));
-  rows.sort((a,b)=>((b.from||b.fromDate||'')).localeCompare((a.from||a.fromDate||'')));
-  const pending=rows.filter(r=>r.status==='pending').length;
-  const approved=rows.filter(r=>r.status==='approved').length;
-  const rejected=rows.filter(r=>r.status==='rejected').length;
-  const sick=rows.filter(r=>r.type==='sick').length;
-  if(summary) summary.innerHTML=`
+
+  let rows = leaveRequests.filter(r=>recEmpMatch(r.empId)&&recDateInRange(r.from));
+  rows.sort((a,b)=>(b.from||'').localeCompare(a.from||''));
+
+  const pending  = rows.filter(r=>r.status==='pending').length;
+  const approved = rows.filter(r=>r.status==='approved').length;
+  const rejected = rows.filter(r=>r.status==='rejected').length;
+  const sick     = rows.filter(r=>r.type==='sick').length;
+
+  summary.innerHTML = `
     <div class="rec-stat"><div class="rec-stat-val" style="color:#7ab8f0;">${pending}</div><div class="rec-stat-lbl">Pending</div></div>
     <div class="rec-stat"><div class="rec-stat-val" style="color:#6fcf97;">${approved}</div><div class="rec-stat-lbl">Approved</div></div>
     <div class="rec-stat"><div class="rec-stat-val" style="color:#f09595;">${rejected}</div><div class="rec-stat-lbl">Rejected</div></div>
     <div class="rec-stat"><div class="rec-stat-val" style="color:#f2c94c;">${sick}</div><div class="rec-stat-lbl">Sick Leaves</div></div>`;
-  thead.innerHTML=`<tr><th>Employee</th><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Reason</th><th>Status</th></tr>`;
-  if(!rows.length){tbody.innerHTML=`<tr><td colspan="7" class="rec-empty">No leave records found.</td></tr>`;return;}
-  tbody.innerHTML=rows.map(r=>{
-    const emp=employees.find(e=>String(e.id)===String(r.empId));
-    const c=emp?empColor(emp):COLORS[0];
-    const from=r.from||r.fromDate||'';
-    const to=r.to||r.toDate||'';
-    const days=countDays(from,to);
-    const sc={pending:'#7ab8f0',approved:'#6fcf97',rejected:'#f09595'}[r.status]||'#9c9a92';
-    const tl={sick:'Sick Leave',casual:'Casual Leave',permission:'Permission'}[r.type]||r.type;
-    return`<tr>
-      <td><div class="rec-emp-cell"><div class="avatar" style="width:26px;height:26px;font-size:10px;flex-shrink:0;background:${c.bg};color:${c.text};">${initials(r.empName||'')}</div><span>${r.empName||'—'}</span></div></td>
-      <td>${tl}</td><td>${formatDisplayDate(from)}</td><td>${formatDisplayDate(to)}</td>
+
+  thead.innerHTML = `<tr>
+    <th>Employee</th><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Reason</th><th>Status</th>
+  </tr>`;
+
+  if(!rows.length){ tbody.innerHTML=`<tr><td colspan="7" class="rec-empty">No leave records found.</td></tr>`; return; }
+
+  tbody.innerHTML = rows.map(r=>{
+    const emp = employees.find(e=>String(e.id)===String(r.empId));
+    const c   = emp ? empColor(emp) : COLORS_LIGHT[0];
+    const days = countDays(r.from, r.to);
+    const statusColor = {pending:'#7ab8f0',approved:'#6fcf97',rejected:'#f09595'}[r.status]||'#9c9a92';
+    const typeLabel = {sick:'Sick Leave',casual:'Casual Leave',permission:'Permission'}[r.type]||r.type;
+    return `<tr>
+      <td><div class="rec-emp-cell">
+        <div class="avatar" style="width:26px;height:26px;font-size:10px;flex-shrink:0;background:${c.bg};color:${c.text};">${initials(r.empName||'')}</div>
+        <span>${r.empName||'—'}</span>
+      </div></td>
+      <td>${typeLabel}</td>
+      <td>${formatDisplayDate(r.from)}</td>
+      <td>${formatDisplayDate(r.to)}</td>
       <td style="text-align:center;">${days}</td>
-      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.reason||''}">${r.reason||'—'}</td>
-      <td><span style="font-weight:600;color:${sc};">${(r.status||'—').charAt(0).toUpperCase()+(r.status||'').slice(1)}</span></td>
+      <td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${r.reason||''}">${r.reason||'—'}</td>
+      <td><span style="font-weight:600;color:${statusColor};">${(r.status||'—').charAt(0).toUpperCase()+(r.status||'').slice(1)}</span></td>
     </tr>`;
   }).join('');
 }
 
-// ── WORK LOG RECORDS TABLE ──
+// ─── WORK LOG RECORDS ───
 function renderLogRecords(){
-  const thead=$('rec-thead'), tbody=$('rec-tbody'), summary=$('rec-summary');
+  const thead = $('rec-thead');
+  const tbody = $('rec-tbody');
+  const summary = $('rec-summary');
   if(!thead||!tbody) return;
-  let rows=logs.filter(r=>recEmpMatch(r.empId)&&recDateInRange(r.date));
+
+  let rows = logs.filter(r=>recEmpMatch(r.empId)&&recDateInRange(r.date));
   rows.sort((a,b)=>normDateStr(b.date).localeCompare(normDateStr(a.date)));
-  const done=rows.filter(r=>r.status==='done').length;
-  const progress=rows.filter(r=>r.status==='progress').length;
-  const blocked=rows.filter(r=>r.status==='blocked').length;
-  if(summary) summary.innerHTML=`
+
+  const done     = rows.filter(r=>r.status==='done').length;
+  const progress = rows.filter(r=>r.status==='progress').length;
+  const blocked  = rows.filter(r=>r.status==='blocked').length;
+
+  summary.innerHTML = `
     <div class="rec-stat"><div class="rec-stat-val">${rows.length}</div><div class="rec-stat-lbl">Total Logs</div></div>
     <div class="rec-stat"><div class="rec-stat-val" style="color:#6fcf97;">${done}</div><div class="rec-stat-lbl">Done</div></div>
     <div class="rec-stat"><div class="rec-stat-val" style="color:#7ab8f0;">${progress}</div><div class="rec-stat-lbl">In Progress</div></div>
     <div class="rec-stat"><div class="rec-stat-val" style="color:#f09595;">${blocked}</div><div class="rec-stat-lbl">Blocked</div></div>`;
-  thead.innerHTML=`<tr><th>Employee</th><th>Role</th><th>Date</th><th>Task</th><th>Status</th><th>Notes</th></tr>`;
-  if(!rows.length){tbody.innerHTML=`<tr><td colspan="6" class="rec-empty">No logs found.</td></tr>`;return;}
-  tbody.innerHTML=rows.map(r=>{
-    const emp=employees.find(e=>String(e.id)===String(r.empId));
-    const c=emp?empColor(emp):COLORS[0];
-    const sc={done:'#6fcf97',progress:'#7ab8f0',blocked:'#f09595'}[r.status]||'#9c9a92';
-    const sl={done:'Done',progress:'In Progress',blocked:'Blocked'}[r.status]||r.status;
-    return`<tr>
-      <td><div class="rec-emp-cell"><div class="avatar" style="width:26px;height:26px;font-size:10px;flex-shrink:0;background:${c.bg};color:${c.text};">${initials(r.empName||'')}</div><span>${r.empName||'—'}</span></div></td>
+
+  thead.innerHTML = `<tr>
+    <th>Employee</th><th>Role</th><th>Date</th><th>Task</th><th>Status</th><th>Notes</th>
+  </tr>`;
+
+  if(!rows.length){ tbody.innerHTML=`<tr><td colspan="6" class="rec-empty">No logs found.</td></tr>`; return; }
+
+  tbody.innerHTML = rows.map(r=>{
+    const emp = employees.find(e=>String(e.id)===String(r.empId));
+    const c   = emp ? empColor(emp) : COLORS_LIGHT[0];
+    const statusColor = {done:'#6fcf97',progress:'#7ab8f0',blocked:'#f09595'}[r.status]||'#9c9a92';
+    const statusLabel = {done:'Done',progress:'In Progress',blocked:'Blocked'}[r.status]||r.status;
+    return `<tr>
+      <td><div class="rec-emp-cell">
+        <div class="avatar" style="width:26px;height:26px;font-size:10px;flex-shrink:0;background:${c.bg};color:${c.text};">${initials(r.empName||'')}</div>
+        <span>${r.empName||'—'}</span>
+      </div></td>
       <td style="color:#9c9a92;">${emp?emp.role:'—'}</td>
       <td>${formatDisplayDate(r.date)}</td>
-      <td style="max-width:180px;">${r.task||'—'}</td>
-      <td><span style="font-weight:600;color:${sc};">${sl}</span></td>
-      <td style="color:#9c9a92;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.notes||''}">${r.notes||'—'}</td>
+      <td style="max-width:200px;">${r.task||'—'}</td>
+      <td><span style="font-weight:600;color:${statusColor};">${statusLabel}</span></td>
+      <td style="color:#9c9a92;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${r.notes||''}">${r.notes||'—'}</td>
     </tr>`;
   }).join('');
 }
 
 // ── HELPERS ──
 function timeToMins(t){
-  if(!t||t==='—'||t==='--:--') return 0;
-  const clean=t.replace(/\s*(AM|PM)/i,'').trim();
-  const parts=clean.split(':');
-  let h=parseInt(parts[0])||0, m=parseInt(parts[1])||0;
-  let mins=h*60+m;
-  if(/PM/i.test(t)&&h!==12) mins+=720;
-  if(/AM/i.test(t)&&h===12) mins-=720;
+  if(!t) return 0;
+  // handles "09:30 AM" or "09:30"
+  const clean = t.replace(/\s*(AM|PM)/i,'').trim();
+  const [h,m] = clean.split(':').map(Number);
+  let mins = h*60+(m||0);
+  if(/PM/i.test(t) && h!==12) mins+=720;
+  if(/AM/i.test(t) && h===12) mins-=720;
   return mins;
 }
-function calcHours(inT,outT){
-  if(!inT||!outT||inT==='—'||outT==='—') return '—';
-  const diff=timeToMins(outT)-timeToMins(inT);
+function calcHours(inT, outT){
+  if(!inT||!outT) return '—';
+  const diff = timeToMins(outT)-timeToMins(inT);
   if(diff<=0) return '—';
   return formatHours(diff);
 }
 function formatHours(mins){
-  if(!mins||mins<=0) return '0h';
+  if(!mins) return '0h 0m';
   const h=Math.floor(mins/60), m=mins%60;
-  return h+'h'+(m?' '+m+'m':'');
+  return h+'h '+(m?m+'m':'');
 }
-function countDays(from,to){
+function countDays(from, to){
   if(!from||!to) return 1;
-  try{
-    const a=new Date(from+'T00:00:00'), b=new Date(to+'T00:00:00');
-    return Math.max(1,Math.round((b-a)/86400000)+1);
-  }catch(e){return 1;}
+  const a=new Date(from+'T00:00:00'), b=new Date(to+'T00:00:00');
+  return Math.max(1, Math.round((b-a)/(86400000))+1);
 }
 
 // ── MASTER EXCEL EXPORT ──
 function exportAllXLSX(){
-  if(typeof XLSX==='undefined'){alert('Excel library not loaded. Please refresh.');return;}
-  const wb=XLSX.utils.book_new();
-  const fv=$('rec-from')?$('rec-from').value:'';
-  const tv=$('rec-to')?$('rec-to').value:'';
-  const rangeLabel=(fv||'All')+' to '+(tv||todayStr());
+  if(typeof XLSX === 'undefined'){ alert('Excel library not loaded.'); return; }
+  const wb = XLSX.utils.book_new();
+  const fv = $('rec-from')?$('rec-from').value:'';
+  const tv = $('rec-to')?$('rec-to').value:'';
+  const rangeLabel = (fv||'All')+' to '+(tv||'today');
 
-  // Sheet 1: Attendance
-  const attRows=attRecords.filter(r=>recEmpMatch(r.empId)&&recDateInRange(r.date));
+  // ── Sheet 1: Attendance ──
+  const attRows = attRecords.filter(r=>recEmpMatch(r.empId)&&recDateInRange(r.date));
   attRows.sort((a,b)=>normDateStr(b.date).localeCompare(normDateStr(a.date)));
-  const attData=[['ATTENDANCE RECORDS — '+rangeLabel],[],
-    ['Employee','Role','Date','Check In','Check Out','Hours Worked','Status']];
+  const attData = [
+    ['ATTENDANCE RECORDS','','','Date range: '+rangeLabel],
+    [],
+    ['Employee','Role','Date','Check In','Check Out','Hours Worked','Status']
+  ];
   attRows.forEach(r=>{
     const emp=employees.find(e=>String(e.id)===String(r.empId));
-    attData.push([r.empName||'',emp?emp.role:'',formatDisplayDate(r.date),
-      r.checkIn||'',r.checkOut||'',calcHours(r.checkIn,r.checkOut),
-      (r.status||'').charAt(0).toUpperCase()+(r.status||'').slice(1)]);
+    attData.push([
+      r.empName||'',
+      emp?emp.role:'',
+      formatDisplayDate(r.date),
+      r.checkIn||'',
+      r.checkOut||'',
+      calcHours(r.checkIn,r.checkOut),
+      (r.status||'').charAt(0).toUpperCase()+(r.status||'').slice(1)
+    ]);
   });
-  attData.push([],[],['SUMMARY PER EMPLOYEE'],['Employee','Role','Present','Half Day','Absent','Total Days','Total Hours']);
+  // Attendance summary per employee
+  attData.push([],[]);
+  attData.push(['ATTENDANCE SUMMARY']);
+  attData.push(['Employee','Role','Present','Half Day','Absent','Total Days','Total Hours']);
   employees.forEach(e=>{
     const mine=attRows.filter(r=>String(r.empId)===String(e.id));
-    const totalMins=mine.reduce((acc,r)=>{const d=timeToMins(r.checkOut)-timeToMins(r.checkIn);return acc+(d>0?d:0);},0);
-    attData.push([e.name,e.role,
+    const totalMins=mine.reduce((acc,r)=>{
+      const d=timeToMins(r.checkOut)-timeToMins(r.checkIn);
+      return acc+(d>0?d:0);
+    },0);
+    attData.push([
+      e.name, e.role,
       mine.filter(r=>r.status==='present').length,
       mine.filter(r=>r.status==='half').length,
       mine.filter(r=>r.status==='absent').length,
-      mine.length,formatHours(totalMins)]);
+      mine.length,
+      formatHours(totalMins)
+    ]);
   });
-  const wsAtt=XLSX.utils.aoa_to_sheet(attData);
-  wsAtt['!cols']=[{wch:18},{wch:14},{wch:14},{wch:12},{wch:12},{wch:13},{wch:12}];
-  XLSX.utils.book_append_sheet(wb,wsAtt,'Attendance');
+  const wsAtt = XLSX.utils.aoa_to_sheet(attData);
+  wsAtt['!cols']=[{wch:18},{wch:14},{wch:14},{wch:10},{wch:10},{wch:12},{wch:12}];
+  styleHeader(wsAtt, 3, 7);
+  XLSX.utils.book_append_sheet(wb, wsAtt, 'Attendance');
 
-  // Sheet 2: Leave Requests
-  const leaveRows=leaveRequests.filter(r=>recEmpMatch(r.empId)&&recDateInRange(r.from||r.fromDate));
-  leaveRows.sort((a,b)=>((b.from||b.fromDate||'')).localeCompare((a.from||a.fromDate||'')));
-  const leaveData=[['LEAVE & PERMISSION RECORDS — '+rangeLabel],[],
-    ['Employee','Role','Leave Type','From Date','To Date','Days','Reason','Status','Decided By','Applied On']];
+  // ── Sheet 2: Leave Requests ──
+  const leaveRows = leaveRequests.filter(r=>recEmpMatch(r.empId)&&recDateInRange(r.from));
+  leaveRows.sort((a,b)=>(b.from||'').localeCompare(a.from||''));
+  const leaveData = [
+    ['LEAVE & PERMISSION RECORDS','','Date range: '+rangeLabel],
+    [],
+    ['Employee','Role','Leave Type','From Date','To Date','Days','Reason','Status','Decided By','Applied On']
+  ];
   leaveRows.forEach(r=>{
     const emp=employees.find(e=>String(e.id)===String(r.empId));
-    const from=r.from||r.fromDate||'';
-    const to=r.to||r.toDate||'';
-    const tl={sick:'Sick Leave',casual:'Casual Leave',permission:'Permission'}[r.type]||r.type;
-    leaveData.push([r.empName||'',emp?emp.role:'',tl,
-      formatDisplayDate(from),formatDisplayDate(to),countDays(from,to),
-      r.reason||'',(r.status||'').charAt(0).toUpperCase()+(r.status||'').slice(1),
-      r.decidedBy||'',formatDisplayDate(r.appliedOn)]);
+    const typeLabel={sick:'Sick Leave',casual:'Casual Leave',permission:'Permission'}[r.type]||r.type;
+    leaveData.push([
+      r.empName||'', emp?emp.role:'', typeLabel,
+      formatDisplayDate(r.from), formatDisplayDate(r.to),
+      countDays(r.from,r.to), r.reason||'',
+      (r.status||'').charAt(0).toUpperCase()+(r.status||'').slice(1),
+      r.decidedBy||'', formatDisplayDate(r.appliedOn)
+    ]);
   });
-  leaveData.push([],[],['LEAVE SUMMARY'],['Employee','Sick Leave','Casual Leave','Permission','Total','Pending','Approved']);
+  // Leave summary
+  leaveData.push([],[]);
+  leaveData.push(['LEAVE SUMMARY']);
+  leaveData.push(['Employee','Sick Leave','Casual Leave','Permission','Total','Pending','Approved']);
   employees.forEach(e=>{
     const mine=leaveRows.filter(r=>String(r.empId)===String(e.id));
-    leaveData.push([e.name,
+    leaveData.push([
+      e.name,
       mine.filter(r=>r.type==='sick').length,
       mine.filter(r=>r.type==='casual').length,
       mine.filter(r=>r.type==='permission').length,
       mine.length,
       mine.filter(r=>r.status==='pending').length,
-      mine.filter(r=>r.status==='approved').length]);
+      mine.filter(r=>r.status==='approved').length
+    ]);
   });
-  const wsLeave=XLSX.utils.aoa_to_sheet(leaveData);
-  wsLeave['!cols']=[{wch:18},{wch:14},{wch:14},{wch:12},{wch:12},{wch:6},{wch:28},{wch:10},{wch:14},{wch:12}];
-  XLSX.utils.book_append_sheet(wb,wsLeave,'Leave Requests');
+  const wsLeave = XLSX.utils.aoa_to_sheet(leaveData);
+  wsLeave['!cols']=[{wch:18},{wch:14},{wch:14},{wch:12},{wch:12},{wch:6},{wch:30},{wch:10},{wch:14},{wch:12}];
+  styleHeader(wsLeave, 3, 10);
+  XLSX.utils.book_append_sheet(wb, wsLeave, 'Leave Requests');
 
-  // Sheet 3: Work Logs
-  const logRows=logs.filter(r=>recEmpMatch(r.empId)&&recDateInRange(r.date));
+  // ── Sheet 3: Work Logs ──
+  const logRows = logs.filter(r=>recEmpMatch(r.empId)&&recDateInRange(r.date));
   logRows.sort((a,b)=>normDateStr(b.date).localeCompare(normDateStr(a.date)));
-  const logData=[['WORK LOG RECORDS — '+rangeLabel],[],
-    ['Employee','Role','Date','Task','Status','Notes']];
+  const logData = [
+    ['WORK LOG RECORDS','','Date range: '+rangeLabel],
+    [],
+    ['Employee','Role','Date','Task','Status','Notes']
+  ];
   logRows.forEach(l=>{
     const emp=employees.find(e=>String(e.id)===String(l.empId));
-    const sl={done:'Done',progress:'In Progress',blocked:'Blocked'}[l.status]||l.status;
-    logData.push([l.empName||'',emp?emp.role:'',formatDisplayDate(l.date),l.task||'',sl,l.notes||'']);
+    const statusLabel={done:'Done',progress:'In Progress',blocked:'Blocked'}[l.status]||l.status;
+    logData.push([l.empName||'', emp?emp.role:'', formatDisplayDate(l.date), l.task||'', statusLabel, l.notes||'']);
   });
-  logData.push([],[],['LOG SUMMARY'],['Employee','Total','Done','In Progress','Blocked']);
+  // Log summary per employee
+  logData.push([],[]);
+  logData.push(['WORK LOG SUMMARY']);
+  logData.push(['Employee','Total Logs','Done','In Progress','Blocked']);
   employees.forEach(e=>{
     const mine=logRows.filter(r=>String(r.empId)===String(e.id));
-    logData.push([e.name,mine.length,
+    logData.push([
+      e.name, mine.length,
       mine.filter(r=>r.status==='done').length,
       mine.filter(r=>r.status==='progress').length,
-      mine.filter(r=>r.status==='blocked').length]);
+      mine.filter(r=>r.status==='blocked').length
+    ]);
   });
-  const wsLog=XLSX.utils.aoa_to_sheet(logData);
+  const wsLog = XLSX.utils.aoa_to_sheet(logData);
   wsLog['!cols']=[{wch:18},{wch:14},{wch:12},{wch:40},{wch:12},{wch:40}];
-  XLSX.utils.book_append_sheet(wb,wsLog,'Work Logs');
+  styleHeader(wsLog, 3, 6);
+  XLSX.utils.book_append_sheet(wb, wsLog, 'Work Logs');
 
-  // Sheet 4: Daily Combined Summary
-  const allDates=[...new Set([
+  // ── Sheet 4: Combined daily summary ──
+  const allDates = [...new Set([
     ...attRows.map(r=>normDateStr(r.date)),
     ...logRows.map(r=>normDateStr(r.date))
   ])].sort().reverse();
-  const combinedData=[['DAILY COMBINED SUMMARY — '+rangeLabel],[],
-    ['Date','Employee','Check In','Check Out','Hours','Attendance','Done','In Progress','Blocked']];
+
+  const combinedData = [
+    ['DAILY COMBINED SUMMARY','Date range: '+rangeLabel],
+    [],
+    ['Date','Employee','Check In','Check Out','Hours','Att Status','Tasks Done','Tasks In Progress','Tasks Blocked']
+  ];
   allDates.forEach(d=>{
     employees.forEach(e=>{
       const att=attRows.find(r=>String(r.empId)===String(e.id)&&normDateStr(r.date)===d);
       const eLogs=logRows.filter(r=>String(r.empId)===String(e.id)&&normDateStr(r.date)===d);
       if(!att&&!eLogs.length) return;
       combinedData.push([
-        formatDisplayDate(d),e.name,
+        formatDisplayDate(d), e.name,
         att?att.checkIn||'':'',
         att?att.checkOut||'':'',
         att?calcHours(att.checkIn,att.checkOut):'',
@@ -1785,46 +2016,27 @@ function exportAllXLSX(){
       ]);
     });
   });
-  const wsCombined=XLSX.utils.aoa_to_sheet(combinedData);
-  wsCombined['!cols']=[{wch:14},{wch:16},{wch:10},{wch:10},{wch:10},{wch:12},{wch:10},{wch:12},{wch:10}];
-  XLSX.utils.book_append_sheet(wb,wsCombined,'Daily Summary');
+  const wsCombined = XLSX.utils.aoa_to_sheet(combinedData);
+  wsCombined['!cols']=[{wch:14},{wch:16},{wch:10},{wch:10},{wch:10},{wch:12},{wch:12},{wch:14},{wch:14}];
+  styleHeader(wsCombined, 3, 9);
+  XLSX.utils.book_append_sheet(wb, wsCombined, 'Daily Summary');
 
-  const dateTag=(fv||todayStr()).replace(/-/g,'')+'_'+(tv||todayStr()).replace(/-/g,'');
-  XLSX.writeFile(wb,'WorkLog_'+dateTag+'.xlsx');
+  // Download
+  const dateTag = (fv||todayStr()).replace(/-/g,'')+'_'+(tv||todayStr()).replace(/-/g,'');
+  XLSX.writeFile(wb, 'WorkLog_Records_'+dateTag+'.xlsx');
 }
 
-// ── RENDER ATT SUMMARY IN DASHBOARD ──
-function renderAttSummaryInDash(){
-  const el=$('dash-att-summary'); if(!el)return;
-  const today=todayStr();
-  const todayRecs=attRecords.filter(r=>normDateStr(r.date)===today);
-  el.innerHTML=employees.map(e=>{
-    const rec=todayRecs.find(r=>String(r.empId)===String(e.id));
-    const c=empColor(e);
-    const times=rec&&rec.checkIn?(rec.checkIn+(rec.checkOut?' – '+rec.checkOut:'…')):'—';
-    return`<div class="admin-att-row">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div class="avatar" style="width:28px;height:28px;font-size:10px;background:${c.bg};color:${c.text};">${initials(e.name)}</div>
-        <div>
-          <div style="font-size:14px;font-weight:500;color:#f0eeea;">${e.name}</div>
-          <div style="font-size:12px;color:#9c9a92;">${times}</div>
-        </div>
-      </div>
-      ${attBadge(rec?rec.status:'absent')}
-    </div>`;
-  }).join('');
+function styleHeader(ws, headerRow, cols){
+  // Bold the header row (row index is 0-based, XLSX row is 1-based)
+  for(let c=0;c<cols;c++){
+    const cell=XLSX.utils.encode_cell({r:headerRow-1,c});
+    if(ws[cell]){
+      ws[cell].s={font:{bold:true}};
+    }
+  }
 }
 
 // ── START ──
-// Re-render avatars if user switches dark/light mode while app is open
-window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>{
-  if(currentUser){
-    const c=empColor(currentUser);
-    const av=$('hdr-av');
-    if(av){av.style.background=c.bg;av.style.color=c.text;}
-  }
-  buildLoginGrid();
-});
 init();
 </script>
 </body>
