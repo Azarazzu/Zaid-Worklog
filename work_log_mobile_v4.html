@@ -1251,37 +1251,105 @@ function startClock(){
 // ── LOAD / SAVE ATT ──
 async function loadAttRecords(){
   if(apiUrl){
-    try{ const r=await api({action:'getAttendance'}); attRecords=r.records||[]; }
-    catch(e){ attRecords=JSON.parse(localStorage.getItem(ATT_KEY)||'[]'); }
+    try{
+      const r=await api({action:'getAttendance'});
+      attRecords=r.records||[];
+      // Also sync to localStorage as cache
+      localStorage.setItem(ATT_KEY, JSON.stringify(attRecords));
+    } catch(e){
+      // Fall back to local cache
+      attRecords=JSON.parse(localStorage.getItem(ATT_KEY)||'[]');
+    }
   } else {
     attRecords=JSON.parse(localStorage.getItem(ATT_KEY)||'[]');
   }
 }
 async function saveAttRecord(rec){
-  attRecords = attRecords.filter(r=>!(String(r.empId)===String(rec.empId)&&r.date===rec.date));
+  // Always reload fresh data first to avoid overwriting other users
+  if(apiUrl){
+    try{
+      const r=await api({action:'getAttendance'});
+      attRecords=r.records||[];
+    } catch(e){}
+  }
+  // Upsert: remove old record for same emp+date, add new
+  attRecords = attRecords.filter(r=>!(String(r.empId)===String(rec.empId)&&normDateStr(r.date)===normDateStr(rec.date)));
   attRecords.unshift(rec);
+  // Save locally
   localStorage.setItem(ATT_KEY, JSON.stringify(attRecords));
-  if(apiUrl){ try{ await api({action:'saveAttendance', data:JSON.stringify(attRecords)}); }catch(e){} }
+  // Save to API — one row per record
+  if(apiUrl){
+    try{
+      await api({action:'upsertAttendance',
+        id:String(rec.id),
+        empId:String(rec.empId),
+        empName:rec.empName,
+        date:rec.date,
+        checkIn:rec.checkIn||'',
+        checkOut:rec.checkOut||'',
+        status:rec.status||'',
+        ts:String(rec.ts||Date.now())
+      });
+    } catch(e){ console.warn('Att save failed:', e); }
+  }
 }
 
 // ── LOAD / SAVE LEAVE ──
 async function loadLeaveRequests(){
   if(apiUrl){
-    try{ const r=await api({action:'getLeaves'}); leaveRequests=r.requests||[]; }
-    catch(e){ leaveRequests=JSON.parse(localStorage.getItem(LEAVE_KEY)||'[]'); }
+    try{
+      const r=await api({action:'getLeaves'});
+      leaveRequests=r.requests||[];
+      localStorage.setItem(LEAVE_KEY, JSON.stringify(leaveRequests));
+    } catch(e){
+      leaveRequests=JSON.parse(localStorage.getItem(LEAVE_KEY)||'[]');
+    }
   } else {
     leaveRequests=JSON.parse(localStorage.getItem(LEAVE_KEY)||'[]');
   }
 }
 async function saveLeaveRequests(){
   localStorage.setItem(LEAVE_KEY, JSON.stringify(leaveRequests));
-  if(apiUrl){ try{ await api({action:'saveLeaves', data:JSON.stringify(leaveRequests)}); }catch(e){} }
+  if(apiUrl){
+    try{
+      // Save entire leave list (leaves are low volume, admin-managed)
+      await api({action:'saveLeaves', data:JSON.stringify(leaveRequests)});
+    } catch(e){ console.warn('Leave save failed:', e); }
+  }
+}
+async function saveOneLeaveRequest(req){
+  // Reload fresh first to avoid losing other requests
+  if(apiUrl){
+    try{ const r=await api({action:'getLeaves'}); leaveRequests=r.requests||[]; } catch(e){}
+  }
+  // Upsert
+  leaveRequests = leaveRequests.filter(r=>String(r.id)!==String(req.id));
+  leaveRequests.unshift(req);
+  localStorage.setItem(LEAVE_KEY, JSON.stringify(leaveRequests));
+  if(apiUrl){
+    try{
+      await api({action:'upsertLeave',
+        id:String(req.id),
+        empId:String(req.empId),
+        empName:req.empName,
+        type:req.type,
+        fromDate:req.from,
+        toDate:req.to,
+        reason:req.reason||'',
+        status:req.status||'pending',
+        decidedBy:req.decidedBy||'',
+        decidedOn:req.decidedOn||'',
+        appliedOn:req.appliedOn||'',
+        ts:String(req.ts||Date.now())
+      });
+    } catch(e){ console.warn('Leave upsert failed:', e); }
+  }
 }
 
 // ── INIT ATTENDANCE TAB ──
 async function initAttTab(){
   startClock();
-  await loadAttRecords();
+  await loadAttRecords(); // Always fetch fresh from server
   const today = todayStr();
   const myRec = attRecords.find(r=>String(r.empId)===String(currentUser.id)&&r.date===today);
   renderCheckInUI(myRec);
@@ -1453,8 +1521,7 @@ async function submitLeaveRequest(){
     type, from, to, reason, status:'pending',
     appliedOn: todayStr(), ts: Date.now()
   };
-  leaveRequests.unshift(req);
-  await saveLeaveRequests();
+  await saveOneLeaveRequest(req);
   $('leave-reason').value='';
   okBanner.style.display='block';
   setTimeout(()=>okBanner.style.display='none', 3000);
@@ -1505,8 +1572,9 @@ function renderAdminLeaves(){
 async function handleLeave(id, status){
   const idx=leaveRequests.findIndex(r=>String(r.id)===String(id));
   if(idx<0)return;
-  leaveRequests[idx]={...leaveRequests[idx],status,decidedBy:currentUser.name,decidedOn:todayStr()};
-  await saveLeaveRequests();
+  const updatedReq={...leaveRequests[idx],status,decidedBy:currentUser.name,decidedOn:todayStr()};
+  leaveRequests[idx]=updatedReq;
+  await saveOneLeaveRequest(updatedReq);
   renderAdminLeaves();
   // If approved leave, auto-mark attendance as absent/half
   const req=leaveRequests[idx];
